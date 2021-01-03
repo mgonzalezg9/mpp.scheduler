@@ -33,7 +33,7 @@ Task *load_tasks(const char *file, int *n_tasks)
 			if(c == ',') {
 				j++;
 				nElem = fscanf(fd, "%d%c", &td, &c);
-				tasks[i].dep_tasks = realloc(tasks[i].dep_tasks, j*sizeof(int));
+				tasks[i].dep_tasks = (int *) realloc(tasks[i].dep_tasks, j*sizeof(int));
 				tasks[i].dep_tasks[j-1] = td;
 			}
 			else { break; }

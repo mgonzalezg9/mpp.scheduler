@@ -1,7 +1,7 @@
-GCC = gcc
-FLAGS = -O3 -std=c99 -ggdb3 -Wall -lm
-ARG_1 = input/platform_01
-ARG_2 = input/tasks_01
+GCC = g++
+FLAGS = -O3 -std=c++11 -ggdb3 -Wall -lm
+ARG_1 = input/01/platform_01
+ARG_2 = input/01/tasks_01
 SEC = ./sec
 
 sec: src/main.c src/task.c src/platform.c src/io.c src/sec.c
