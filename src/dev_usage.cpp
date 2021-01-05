@@ -1,14 +1,11 @@
-#include "../include/dev_usage.h"
+#include "../include/dev_usage.hpp"
 #include <algorithm>
 #include <set>
 
 DevUsage::DevUsage(Device dispositivo)
 {
     this->dispositivo = dispositivo;
-}
-
-DevUsage::~DevUsage()
-{
+    this->ht = false;
 }
 
 // Getters
@@ -50,7 +47,6 @@ double DevUsage::getTiempo()
     for (map<Task, int>::iterator it = cores_tarea.begin(); it != cores_tarea.end(); ++it)
     {
         Task tarea = it->first;
-        int numCores = it->second;
 
         double tiempo = ((double)getInstruccionesEjecutadas(tarea)) / getNumInst(tarea);
         if (tiempo > maxTiempo)

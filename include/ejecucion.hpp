@@ -9,18 +9,18 @@ using namespace std;
 
 class Ejecucion
 {
+private:
+    Task tarea;
+    bool ht;
+
 public:
-    static set<int> Ejecucion::getIds(vector<Ejecucion> tareas);
+    static set<int> getIds(vector<Ejecucion> tareas);
 
     Ejecucion(Task tarea, bool ht);
     ~Ejecucion();
 
-    Task Ejecucion::getTarea();
-    bool Ejecucion::isHT();
-
-private:
-    Task tarea;
-    bool ht;
+    Task getTarea();
+    bool isHT();
 };
 
 #endif // EJECUCION_H

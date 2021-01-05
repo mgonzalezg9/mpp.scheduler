@@ -1,4 +1,4 @@
-#include "../include/ejecucion.h"
+#include "../include/ejecucion.hpp"
 
 set<int> Ejecucion::getIds(vector<Ejecucion> tareas) {
     set<int> ids;

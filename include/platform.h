@@ -22,6 +22,7 @@ double getHyperConsumption(Device dev);
 
 int getNumDevices(Platform  *);
 Device *getDevices(Platform *);
+Device getDevice(Platform *, int);
 int getComputationalCapacity(Platform *);
 double getConsumption(Platform *);
 
