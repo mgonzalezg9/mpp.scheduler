@@ -37,9 +37,6 @@ public:
     // Devuelve el incremento de energía que supone el uso actual del dispositivo
     double getEnergia();
 
-    // Devuelve si es consistente el estado del dispositivo (las dependencias de las tareas están satisfechas)
-    bool isRealizable(vector<Ejecucion> tareasPendientes);
-
     // Asigna una tarea para su ejecución en el dispositivo
     void asignarTarea(Ejecucion tarea, int numCores);
 
@@ -64,10 +61,8 @@ public:
     // Devuelve las instrucciones que está ejecutando la tarea t
     int getInstruccionesEjecutadas(Task t);
 
-    void activarHT()
-    {
-        ht = true;
-    }
+    // Imprime información sobre el dispositivo para depuración
+    void printInfo();
 };
 
 #endif // DEV_USAGE_H

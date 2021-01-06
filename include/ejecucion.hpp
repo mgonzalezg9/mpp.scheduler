@@ -21,6 +21,11 @@ public:
 
     Task getTarea();
     bool isHT();
+
+    bool operator<(const Ejecucion &other) const
+    {
+        return tarea < other.tarea;
+    }
 };
 
 #endif // EJECUCION_H

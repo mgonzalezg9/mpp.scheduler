@@ -1,6 +1,7 @@
 #include "../include/dev_usage.hpp"
 #include <algorithm>
 #include <set>
+#include <iostream>
 
 DevUsage::DevUsage(Device dispositivo)
 {
@@ -61,31 +62,6 @@ double DevUsage::getTiempo()
 double DevUsage::getEnergia()
 {
     return getCoresOcupados() * getConsumptionCore(dispositivo);
-}
-
-// Devuelve si es consistente el estado del dispositivo (las dependencias de las tareas están satisfechas)
-bool DevUsage::isRealizable(vector<Ejecucion> tareasPendientes)
-{
-    set<int> pendientes = Ejecucion::getIds(tareasPendientes);
-
-    for (map<Task, int>::iterator it = cores_tarea.begin(); it != cores_tarea.end(); ++it)
-    {
-        Task tarea = it->first;
-        int idTarea = getId(tarea);
-        int numDeps = getNumDeps(tarea);
-        int *deps = getDependencies(tarea);
-
-        // Comprueba si las dependencias estás satisfechas
-        for (int i = 0; i < numDeps; i++)
-        {
-            int dep = deps[i];
-            if (dep != idTarea && pendientes.find(dep) != pendientes.end())
-            {
-                return false;
-            }
-        }
-    }
-    return true;
 }
 
 // Asigna una tarea para su ejecución en el dispositivo
@@ -159,4 +135,16 @@ void DevUsage::deshacerEjecucion(vector<int> &instruccionesEjecutadas, vector<Ej
     }
 
     vaciar();
+}
+
+// Imprime información sobre el dispositivo para depuración
+void DevUsage::printInfo()
+{
+    cout << "Dev " << dispositivo.id << endl;
+    cout << "Núm. cores: " << getNumCores(dispositivo) << endl;
+
+    for (auto t : getTareas())
+    {
+        cout << "T" << getId(t) << ": {(" << getCores(t) << ") => " << getInstruccionesEjecutadas(t) << endl;
+    }
 }

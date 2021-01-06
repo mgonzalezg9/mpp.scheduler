@@ -2,37 +2,66 @@
 #include <stdlib.h>
 #include <bits/stdc++.h>
 #include <deque>
+#include <algorithm>
 
 #include "../include/platform.h"
 #include "../include/task.h"
 #include "../include/ejecucion.hpp"
 #include "../include/dev_usage.hpp"
+#include "../include/plat_usage.hpp"
 
 #define NIVEL_INEXPLORADO -1
 
 using namespace std;
 
-// Construye la simulación de una plataforma sin tareas ejecutandose
-void buildPlataformaInicio(vector<DevUsage> &simulacion, Platform *cluster)
-{
-    for (int i = 0; i < getNumDevices(cluster); i++)
-    {
-        Device device = getDevice(cluster, i);
-        DevUsage dev(device);
-        simulacion.push_back(dev);
-    }
-}
+// Funciones auxiliares
 
 vector<vector<Ejecucion>> getPermutaciones(vector<Ejecucion> tareas)
 {
     vector<vector<Ejecucion>> perms;
+
+    // Ordenado al principio
+    sort(tareas.begin(), tareas.end());
+
+    do
+    {
+        perms.push_back(tareas);
+    } while (next_permutation(tareas.begin(), tareas.end()));
+
     return perms;
+}
+
+// Devuelve si alguien usa alguna parte de la plataforma
+bool isOcupado(vector<DevUsage> plataforma)
+{
+    for (auto dev : plataforma)
+    {
+        if (dev.isOcupado())
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Devuelve si alguien usa alguna parte de la plataforma
+double getTiempo(vector<DevUsage> plataforma)
+{
+    for (auto dev : plataforma)
+    {
+        if (dev.isOcupado())
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 // Esquema de backtracking
 
-void generar(int &nivel, vector<vector<DevUsage>> s, vector<int> &hermanosRestantes, vector<Ejecucion> &tareasEjecutar, deque<vector<Ejecucion>> &permutaciones)
+void generar(int &nivel, vector<PlatUsage> s, vector<int> &hermanosRestantes, vector<Ejecucion> &tareasEjecutar, deque<vector<Ejecucion>> &permutaciones, int &tact, int &eact, vector<int> &instEjecutadas)
 {
+    // Genera las permutaciones
     if (hermanosRestantes[nivel] == NIVEL_INEXPLORADO)
     {
         vector<vector<Ejecucion>> nuevas = getPermutaciones(tareasEjecutar);
@@ -44,25 +73,40 @@ void generar(int &nivel, vector<vector<DevUsage>> s, vector<int> &hermanosRestan
         hermanosRestantes[nivel] = nuevas.size();
     }
 
-    // TODO
+    // Coge la siguiente secuencia en la cola
+    vector<Ejecucion> secuencia = permutaciones.front();
+    permutaciones.pop_front();
+    hermanosRestantes[nivel]--;
+
+    // Limpia el valor generado anteriormente
+    if (s[nivel].isOcupado())
+    {
+        tact -= s[nivel].getTiempo();
+        eact -= s[nivel].getEnergia();
+        s[nivel].deshacerEjecucion(instEjecutadas, tareasEjecutar);
+    }
+
+    s[nivel].asignarTareas(secuencia);
+    tact += s[nivel].getTiempo();
+    eact += s[nivel].getEnergia();
 }
 
-bool solucion(int nivel, vector<vector<DevUsage>> s)
+bool solucion(int nivel, vector<PlatUsage> s)
 {
     return nivel == 2;
 }
 
-bool criterio(int nivel, vector<vector<DevUsage>> s)
+bool criterio(int nivel, vector<PlatUsage> s)
 {
     return nivel == 1;
 }
 
-bool masHermanos(int nivel, vector<vector<DevUsage>> s)
+bool masHermanos(int nivel, vector<PlatUsage> s)
 {
     return false;
 }
 
-void retroceder(int &nivel, vector<vector<DevUsage>> s)
+void retroceder(int &nivel, vector<PlatUsage> s)
 {
     nivel--;
 }
@@ -72,9 +116,8 @@ void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tas
     // Inicialización
     int nivel = 1;
 
-    vector<vector<DevUsage>> s(2);
-    vector<DevUsage> inicio;
-    buildPlataformaInicio(inicio, platform);
+    vector<PlatUsage> s(2);
+    PlatUsage inicio(platform);
     s[0] = inicio;
     s[1] = inicio;
 
@@ -83,7 +126,7 @@ void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tas
 
     double toa, eoa;
     toa = eoa = INT_MAX;
-    vector<vector<DevUsage>> soa;
+    vector<PlatUsage> soa;
 
     vector<int> hermanosRestantes(2);
     hermanosRestantes[0] = NIVEL_INEXPLORADO;
@@ -104,7 +147,7 @@ void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tas
 
         if (criterio(nivel, s))
         {
-            // vector<DevUsage> inicio;
+            // PlatUsage inicio;
             // buildPlataformaInicio(inicio, platform);
             s.push_back(inicio);
             nivel++;
@@ -124,20 +167,4 @@ void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tas
         }
 
     } while (nivel > 0);
-
-    // nivel = 0;
-    // for (std::vector<vector<DevUsage>>::iterator it1 = soa.begin(); it1 != soa.end(); ++it1)
-    // {
-    //     cout << "Nuevo nivel" << endl;
-    //     for (std::vector<DevUsage>::iterator it2 = it1->begin(); it2 != it1->end(); ++it2)
-    //     {
-    //         DevUsage uso = *it2;
-    //         if (nivel == 0)
-    //         {
-    //             it2->activarHT();
-    //         }
-    //         cout << it2->isHTActivado() << endl;
-    //     }
-    //     nivel++;
-    // }
 }
