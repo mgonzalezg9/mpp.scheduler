@@ -5,8 +5,8 @@ ARG_1 = input/01/platform_01
 ARG_2 = input/01/tasks_01
 SEC = ./sec
 
-sec: src/main.c src/task.c src/platform.c src/io.c src/sec.cpp src/dev_usage.cpp src/ejecucion.cpp
-	$(GCC) $(FLAGS) src/main.c src/task.c src/platform.c src/io.c src/sec.cpp src/dev_usage.cpp src/ejecucion.cpp -o sec -DTIME
+sec: src/main.cpp src/task.cpp src/platform.cpp src/io.cpp src/sec.cpp src/dev_usage.cpp src/ejecucion.cpp src/plat_usage.cpp
+	$(GCC) $(FLAGS) src/main.cpp src/task.cpp src/platform.cpp src/io.cpp src/sec.cpp src/dev_usage.cpp src/ejecucion.cpp src/plat_usage.cpp -o sec -DTIME
 #	Add -DDEBUG to display the solution.
 
 valgrind:

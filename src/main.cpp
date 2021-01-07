@@ -1,5 +1,5 @@
 #include <sys/time.h>
-#include "../include/io.h"
+#include "../include/io.hpp"
 
 static double mseconds() {
 	struct timeval t;

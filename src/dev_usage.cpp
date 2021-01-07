@@ -3,6 +3,8 @@
 #include <set>
 #include <iostream>
 
+#define FACTOR_HYPERTHREADING 2
+
 DevUsage::DevUsage(Device dispositivo)
 {
     this->dispositivo = dispositivo;
@@ -38,7 +40,7 @@ vector<Task> DevUsage::getTareas()
 // Devuelve si el dispositivo ejecuta alguna tarea
 bool DevUsage::isOcupado()
 {
-    return cores_tarea.empty();
+    return !cores_tarea.empty();
 }
 
 // Devuelve el incremento en el tiempo que supone el uso actual del dispositivo
@@ -61,13 +63,27 @@ double DevUsage::getTiempo()
 // Devuelve el incremento de energía que supone el uso actual del dispositivo
 double DevUsage::getEnergia()
 {
-    return getCoresOcupados() * getConsumptionCore(dispositivo);
+    if (ht)
+    {
+        return getHyperConsumption(dispositivo);
+    }
+    else
+    {
+        return getCoresOcupados() * getConsumptionCore(dispositivo);
+    }
 }
 
 // Asigna una tarea para su ejecución en el dispositivo
 void DevUsage::asignarTarea(Ejecucion tarea, int numCores)
 {
-    cores_tarea[tarea.getTarea()] = numCores;
+    asignarTarea(tarea.getTarea(), numCores);
+}
+
+// Asigna una tarea para su ejecución en el dispositivo
+void DevUsage::asignarTarea(Task tarea, int numCores)
+{
+    cores_tarea[tarea] = numCores;
+    // cout << numCores << " " << cores_tarea[tarea] << endl;
 }
 
 // Devuelve los cores que ocupa la tarea t
@@ -112,6 +128,12 @@ int DevUsage::getCapacidad()
     return getCoresLibres() * getInstCore(dispositivo);
 }
 
+// Devuelve el número de instrucciones que aún puede ejecutar el dispositivo si se habilita HT
+int DevUsage::getCapacidadHT()
+{
+    return getCapacidad() * FACTOR_HYPERTHREADING;
+}
+
 // Deshace las tareas que puedan estar ejecutandose dentro del cluster
 void DevUsage::deshacerEjecucion(vector<int> &instruccionesEjecutadas, vector<Ejecucion> &tareasPendientes)
 {
@@ -134,13 +156,67 @@ void DevUsage::deshacerEjecucion(vector<int> &instruccionesEjecutadas, vector<Ej
         }
     }
 
+    // Reset del mapa
     vaciar();
+}
+
+// Devuelve si una tarea t se está ejecutando en el dispositivo
+bool DevUsage::isEjecutando(Task t)
+{
+    auto it = cores_tarea.find(t);
+    return it != cores_tarea.end();
+}
+
+// Devuelve si el dispositivo permitiria aplicar HT para el numero de instrucciones
+bool DevUsage::isHTAplicable(int numInstrucciones)
+{
+    return !isOcupado() && numInstrucciones >= getCapacidadHT();
+}
+
+// Asigna la mayor cantidad posible de cores a la tarea para que ejecute las instrucciones que tiene pendientes
+// Devuelve el número de instrucciones que ha podido asignarle
+// El parámetro ht indica si la tarea en cuestión está planificada para ejecutarse con HT
+int DevUsage::asignarCores(Task tarea, int numPendientes, bool ht)
+{
+    int instCore = getInstCore(dispositivo);
+    int coresLibres = getCoresLibres();
+    int instAsignadas;
+
+    if (ht)
+    {
+        instAsignadas = 0;
+
+        if (isHTAplicable(numPendientes))
+        {
+            asignarTarea(tarea, coresLibres);
+            instAsignadas = getCapacidadHT();
+            this->ht = true;
+        }
+    }
+    else
+    {
+        // Calcula el número de cores necesarios
+        int coresNecesarios = numPendientes / instCore;
+
+        if (coresNecesarios > coresLibres)
+        {
+            asignarTarea(tarea, coresLibres);
+            instAsignadas = coresLibres * instCore;
+        }
+        else
+        {
+            asignarTarea(tarea, coresNecesarios);
+            instAsignadas = coresNecesarios * instCore;
+        }
+    }
+
+    return instAsignadas;
 }
 
 // Imprime información sobre el dispositivo para depuración
 void DevUsage::printInfo()
 {
-    cout << "Dev " << dispositivo.id << endl;
+    cout << "Dev " << getDevId(dispositivo) << endl;
     cout << "Núm. cores: " << getNumCores(dispositivo) << endl;
 
     for (auto t : getTareas())

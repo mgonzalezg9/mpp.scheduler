@@ -1,4 +1,4 @@
-#include "../include/platform.h"
+#include "../include/platform.hpp"
 
 int getDevId(Device dev)
 {

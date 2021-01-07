@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "../include/task.h"
-#include "../include/platform.h"
+#include "../include/task.hpp"
+#include "../include/platform.hpp"
 
 Task *load_tasks(const char *file, int *n_tasks)
 {

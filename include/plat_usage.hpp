@@ -2,6 +2,7 @@
 #define PLAT_USAGE_H
 
 #include <vector>
+#include <deque>
 #include "dev_usage.hpp"
 
 using namespace std;
@@ -14,12 +15,14 @@ private:
 public:
     // Constructores
     PlatUsage(Platform *plataforma);
+    PlatUsage() = default;
 
     // Getters
     vector<DevUsage> getDispositivos();
 
     // Asigna una serie de cores a la tarea t y devuelve las instrucciones ejecutadas
-    int asignarCores(Task t, bool ht);
+    // El parámetro ht indica si se le debe aplicar HT a la tarea
+    int asignarCores(Task t, int numPendientes, bool ht);
 
     // Devuelve las tareas que se están ejecutando
     vector<Task> getTareas();
@@ -30,7 +33,7 @@ public:
     // Devuelve el tiempo que tarda la tarea t en ejecutarse
     double getTiempo(Task t);
 
-    // Devuelve el incremento en el tiempo que supone el uso actual de la plataforma
+    // Devuelve el tiempo global que supone el uso actual de la plataforma
     double getTiempo();
 
     // Devuelve el incremento de energía que supone el uso actual de la plataforma
@@ -40,7 +43,7 @@ public:
     bool isRealizable(vector<Ejecucion> tareasPendientes);
 
     // Asigna una tarea para su ejecución en el dispositivo
-    void asignarTareas(vector<Ejecucion> tareasPendientes);
+    void asignarTareas(vector<Ejecucion> &tareasActuales, deque<vector<Ejecucion>> &permutaciones, vector<int> &instEjecutadas, vector<Ejecucion> &tareasPendientes);
 
     // Desaloja la plataforma por completo
     void vaciar();
@@ -54,8 +57,11 @@ public:
     // Devuelve las instrucciones que está ejecutando la tarea t
     int getInstruccionesEjecutadas(Task t);
 
+    // Devuelve si se ejecuta la tarea t en la plataforma
+    bool isEjecutando(Task t);
+
     // Comprueba que se pueda ejecutar con HT la tarea t
-    bool isHTAplicable(Task t);
+    bool isHTAplicable(Task t, int numInstrucciones);
 
     // Imprime información sobre la plataforma para depuración
     void printInfo();

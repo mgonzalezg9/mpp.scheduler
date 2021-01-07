@@ -4,8 +4,8 @@
 #include <deque>
 #include <algorithm>
 
-#include "../include/platform.h"
-#include "../include/task.h"
+#include "../include/platform.hpp"
+#include "../include/task.hpp"
 #include "../include/ejecucion.hpp"
 #include "../include/dev_usage.hpp"
 #include "../include/plat_usage.hpp"
@@ -31,40 +31,14 @@ vector<vector<Ejecucion>> getPermutaciones(vector<Ejecucion> tareas)
     return perms;
 }
 
-// Devuelve si alguien usa alguna parte de la plataforma
-bool isOcupado(vector<DevUsage> plataforma)
-{
-    for (auto dev : plataforma)
-    {
-        if (dev.isOcupado())
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
-// Devuelve si alguien usa alguna parte de la plataforma
-double getTiempo(vector<DevUsage> plataforma)
-{
-    for (auto dev : plataforma)
-    {
-        if (dev.isOcupado())
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
 // Esquema de backtracking
 
-void generar(int &nivel, vector<PlatUsage> s, vector<int> &hermanosRestantes, vector<Ejecucion> &tareasEjecutar, deque<vector<Ejecucion>> &permutaciones, int &tact, int &eact, vector<int> &instEjecutadas)
+void generar(int nivel, vector<PlatUsage> &s, vector<int> &hermanosRestantes, vector<Ejecucion> &tareasPendientes, deque<vector<Ejecucion>> &permutaciones, double &tact, double &eact, vector<int> &instEjecutadas)
 {
     // Genera las permutaciones
     if (hermanosRestantes[nivel] == NIVEL_INEXPLORADO)
     {
-        vector<vector<Ejecucion>> nuevas = getPermutaciones(tareasEjecutar);
+        vector<vector<Ejecucion>> nuevas = getPermutaciones(tareasPendientes);
 
         for (auto permutacion : nuevas)
         {
@@ -81,33 +55,39 @@ void generar(int &nivel, vector<PlatUsage> s, vector<int> &hermanosRestantes, ve
     // Limpia el valor generado anteriormente
     if (s[nivel].isOcupado())
     {
+        cout << "Desaloja nivel" << endl;
         tact -= s[nivel].getTiempo();
         eact -= s[nivel].getEnergia();
-        s[nivel].deshacerEjecucion(instEjecutadas, tareasEjecutar);
+        s[nivel].deshacerEjecucion(instEjecutadas, tareasPendientes);
     }
 
-    s[nivel].asignarTareas(secuencia);
+    s[nivel].asignarTareas(secuencia, permutaciones, instEjecutadas, tareasPendientes);
     tact += s[nivel].getTiempo();
     eact += s[nivel].getEnergia();
 }
 
-bool solucion(int nivel, vector<PlatUsage> s)
+bool solucion(vector<Ejecucion> tareasPendientes)
 {
-    return nivel == 2;
+    return tareasPendientes.empty();
 }
 
-bool criterio(int nivel, vector<PlatUsage> s)
+bool criterio(int nivel, vector<PlatUsage> s, vector<Ejecucion> tareasPendientes)
 {
-    return nivel == 1;
+    return !tareasPendientes.empty() && s[nivel].isRealizable(tareasPendientes);
 }
 
-bool masHermanos(int nivel, vector<PlatUsage> s)
+bool masHermanos(int nivel, vector<int> hermanosRestantes)
 {
-    return false;
+    return hermanosRestantes[nivel] > 0;
 }
 
-void retroceder(int &nivel, vector<PlatUsage> s)
+void retroceder(int &nivel, vector<PlatUsage> &s, double &tact, double &eact, vector<int> &instEjecutadas, vector<Ejecucion> &tareasPendientes)
 {
+    tact -= s[nivel].getTiempo();
+    eact -= s[nivel].getEnergia();
+
+    s[nivel].deshacerEjecucion(instEjecutadas, tareasPendientes);
+
     nivel--;
 }
 
@@ -121,8 +101,8 @@ void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tas
     s[0] = inicio;
     s[1] = inicio;
 
-    double t, e;
-    t = e = 0.0;
+    double tact, eact;
+    tact = eact = 0.0;
 
     double toa, eoa;
     toa = eoa = INT_MAX;
@@ -134,21 +114,23 @@ void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tas
 
     deque<vector<Ejecucion>> permutaciones;
 
+    vector<Ejecucion> tareasPendientes = Ejecucion::crearTareas(tasks, n_tasks);
+
+    vector<int> instEjecutadas(n_tasks, 0);
+
     // Algoritmo
     do
     {
-        generar(nivel, s);
-        if (solucion(nivel, s) && t < toa && e <= eoa)
+        generar(nivel, s, hermanosRestantes, tareasPendientes, permutaciones, tact, eact, instEjecutadas);
+        if (solucion(tareasPendientes) && tact < toa && eact <= eoa)
         {
-            toa = t;
-            eoa = e;
+            toa = tact;
+            eoa = eact;
             soa = s;
         }
 
-        if (criterio(nivel, s))
+        if (criterio(nivel, s, tareasPendientes))
         {
-            // PlatUsage inicio;
-            // buildPlataformaInicio(inicio, platform);
             s.push_back(inicio);
             nivel++;
 
@@ -160,9 +142,9 @@ void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tas
         }
         else
         {
-            while (!masHermanos(nivel, s) && nivel > 0)
+            while (!masHermanos(nivel, hermanosRestantes) && nivel > 0)
             {
-                retroceder(nivel, s);
+                retroceder(nivel, s, tact, eact, instEjecutadas, tareasPendientes);
             }
         }
 
