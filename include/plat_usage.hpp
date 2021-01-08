@@ -39,14 +39,11 @@ public:
     // Devuelve el incremento de energía que supone el uso actual de la plataforma
     double getEnergia();
 
-    // Devuelve si es consistente el estado de la plataforma (las dependencias de las tareas están satisfechas)
-    bool isRealizable(vector<Ejecucion> tareasPendientes);
+    // Devuelve si se podría ejecutar la tarea t en la plataforma, según sus dependencias
+    // bool isRealizable(Task t, vector<Ejecucion> tareasPendientes);
 
     // Asigna una tarea para su ejecución en el dispositivo
-    void asignarTareas(vector<Ejecucion> &tareasActuales, deque<vector<Ejecucion>> &permutaciones, vector<int> &instEjecutadas, vector<Ejecucion> &tareasPendientes);
-
-    // Desaloja la plataforma por completo
-    void vaciar();
+    void asignarTareas(vector<Ejecucion> &tareasActuales, deque<vector<Ejecucion>> &permutaciones, vector<int> &instEjecutadas, vector<Ejecucion> &tareasPendientes, int &hermanosRestantes);
 
     // Devuelve el número de instrucciones que aún puede ejecutar el dispositivo
     int getCapacidad();
@@ -59,6 +56,9 @@ public:
 
     // Devuelve si se ejecuta la tarea t en la plataforma
     bool isEjecutando(Task t);
+
+    // Devuelve si se ejecuta la tarea con identificador idTarea en la plataforma
+    bool isEjecutando(int idTarea);
 
     // Comprueba que se pueda ejecutar con HT la tarea t
     bool isHTAplicable(Task t, int numInstrucciones);

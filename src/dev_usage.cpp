@@ -82,7 +82,11 @@ void DevUsage::asignarTarea(Ejecucion tarea, int numCores)
 // Asigna una tarea para su ejecución en el dispositivo
 void DevUsage::asignarTarea(Task tarea, int numCores)
 {
-    cores_tarea[tarea] = numCores;
+    if (numCores > 0)
+    {
+        cores_tarea[tarea] = numCores;
+    }
+
     // cout << numCores << " " << cores_tarea[tarea] << endl;
 }
 
@@ -95,13 +99,13 @@ int DevUsage::getCores(Task t)
 // Devuelve las instrucciones que está ejecutando la tarea t
 int DevUsage::getInstruccionesEjecutadas(Task t)
 {
-    return getCores(t) * getInstCore(dispositivo);
-}
+    int numInstrucciones = getCores(t) * getInstCore(dispositivo);
+    if (ht)
+    {
+        numInstrucciones *= FACTOR_HYPERTHREADING;
+    }
 
-// Limpia el mapa con la asociación de cores para cada tarea
-void DevUsage::vaciar()
-{
-    cores_tarea.clear();
+    return numInstrucciones;
 }
 
 // Devuelve el número de cores ocupados
@@ -137,16 +141,14 @@ int DevUsage::getCapacidadHT()
 // Deshace las tareas que puedan estar ejecutandose dentro del cluster
 void DevUsage::deshacerEjecucion(vector<int> &instruccionesEjecutadas, vector<Ejecucion> &tareasPendientes)
 {
-    int instCore = getInstCore(dispositivo);
     set<int> pendientes = Ejecucion::getIds(tareasPendientes);
 
     for (map<Task, int>::iterator it = cores_tarea.begin(); it != cores_tarea.end(); ++it)
     {
         Task tarea = it->first;
         int idTarea = getId(tarea);
-        int numCoresTarea = it->second;
 
-        int instrucciones = numCoresTarea * instCore;
+        int instrucciones = getInstruccionesEjecutadas(tarea);
         instruccionesEjecutadas[idTarea] -= instrucciones;
 
         if (pendientes.find(getId(tarea)) == pendientes.end())
@@ -157,7 +159,8 @@ void DevUsage::deshacerEjecucion(vector<int> &instruccionesEjecutadas, vector<Ej
     }
 
     // Reset del mapa
-    vaciar();
+    cores_tarea.clear();
+    ht = false;
 }
 
 // Devuelve si una tarea t se está ejecutando en el dispositivo
@@ -167,10 +170,24 @@ bool DevUsage::isEjecutando(Task t)
     return it != cores_tarea.end();
 }
 
+// Devuelve si una tarea con identiicador t se está ejecutando en el dispositivo
+bool DevUsage::isEjecutando(int idTarea)
+{
+    for (map<Task, int>::iterator it = cores_tarea.begin(); it != cores_tarea.end(); ++it)
+    {
+        Task tarea = it->first;
+        if (getId(tarea) == idTarea)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 // Devuelve si el dispositivo permitiria aplicar HT para el numero de instrucciones
 bool DevUsage::isHTAplicable(int numInstrucciones)
 {
-    return !isOcupado() && numInstrucciones >= getCapacidadHT();
+    return !isOcupado() && numInstrucciones == getCapacidadHT();
 }
 
 // Asigna la mayor cantidad posible de cores a la tarea para que ejecute las instrucciones que tiene pendientes
@@ -180,16 +197,14 @@ int DevUsage::asignarCores(Task tarea, int numPendientes, bool ht)
 {
     int instCore = getInstCore(dispositivo);
     int coresLibres = getCoresLibres();
-    int instAsignadas;
+    int instAsignadas = 0;
 
     if (ht)
     {
-        instAsignadas = 0;
-
         if (isHTAplicable(numPendientes))
         {
             asignarTarea(tarea, coresLibres);
-            instAsignadas = getCapacidadHT();
+            instAsignadas = coresLibres * instCore * FACTOR_HYPERTHREADING;
             this->ht = true;
         }
     }
@@ -217,10 +232,15 @@ int DevUsage::asignarCores(Task tarea, int numPendientes, bool ht)
 void DevUsage::printInfo()
 {
     cout << "Dev " << getDevId(dispositivo) << endl;
-    cout << "Núm. cores: " << getNumCores(dispositivo) << endl;
-
-    for (auto t : getTareas())
+    cout << "\tNúm. cores: " << getNumCores(dispositivo) << endl;
+    if (ht)
     {
-        cout << "T" << getId(t) << ": {(" << getCores(t) << ") => " << getInstruccionesEjecutadas(t) << endl;
+        cout << "\t*HT*" << endl;
+    }
+
+    vector<Task> tareas = getTareas();
+    for (auto t : tareas)
+    {
+        cout << "\t\tT" << getId(t) << ": {(" << getCores(t) << ") => " << getInstruccionesEjecutadas(t) << "}" << endl;
     }
 }

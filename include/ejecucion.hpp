@@ -14,6 +14,7 @@ private:
     bool ht;
 
 public:
+    /* Operaciones sobre vectores de Ejecucion */
     // Devuelve el conjunto de identificadores presentes en las tareas pasadas como parámetro
     static set<int> getIds(vector<Ejecucion> tareas);
 
@@ -26,6 +27,12 @@ public:
     // Borra la tarea t del vector de tareas
     static bool remove(Task t, vector<Ejecucion> &tareas);
 
+    // Devuelve una secuencia de tareas que se podrían ejecutar al tener las dependencias resueltas
+    static vector<Ejecucion> validar(vector<Ejecucion> tareas);
+
+    // Comprueba si la combinación se encuentra entre la lista de combinaciones
+    static bool isPresente(vector<Ejecucion> combinacion, vector<vector<Ejecucion>> combinaciones);
+
     Ejecucion(Task tarea, bool ht);
     ~Ejecucion();
 
@@ -36,6 +43,11 @@ public:
     bool operator<(const Ejecucion &other) const
     {
         return tarea < other.tarea;
+    }
+
+    bool operator==(const Ejecucion &other) const
+    {
+        return tarea == other.tarea;
     }
 };
 

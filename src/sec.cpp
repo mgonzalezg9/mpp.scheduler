@@ -10,7 +10,7 @@
 #include "../include/dev_usage.hpp"
 #include "../include/plat_usage.hpp"
 
-#define NIVEL_INEXPLORADO -1
+#define NIVEL_INEXPLORADO 0
 
 using namespace std;
 
@@ -23,9 +23,20 @@ vector<vector<Ejecucion>> getPermutaciones(vector<Ejecucion> tareas)
     // Ordenado al principio
     sort(tareas.begin(), tareas.end());
 
+    // for (auto ej : tareas)
+    // {
+    //     cout << "T" << getId(ej.getTarea()) << (ej.isHT() ? "*" : "") << " ";
+    // }
+    // cout << endl;
+
     do
     {
-        perms.push_back(tareas);
+        vector<Ejecucion> combinacion = Ejecucion::validar(tareas);
+
+        if (!Ejecucion::isPresente(combinacion, perms))
+        {
+            perms.push_back(combinacion);
+        }
     } while (next_permutation(tareas.begin(), tareas.end()));
 
     return perms;
@@ -50,20 +61,28 @@ void generar(int nivel, vector<PlatUsage> &s, vector<int> &hermanosRestantes, ve
     // Coge la siguiente secuencia en la cola
     vector<Ejecucion> secuencia = permutaciones.front();
     permutaciones.pop_front();
+
+    for (auto ej : secuencia)
+    {
+        cout << "T" << getId(ej.getTarea()) << (ej.isHT() ? "*" : "") << " ";
+    }
+    cout << endl;
+
     hermanosRestantes[nivel]--;
 
     // Limpia el valor generado anteriormente
     if (s[nivel].isOcupado())
     {
-        cout << "Desaloja nivel" << endl;
         tact -= s[nivel].getTiempo();
         eact -= s[nivel].getEnergia();
         s[nivel].deshacerEjecucion(instEjecutadas, tareasPendientes);
     }
 
-    s[nivel].asignarTareas(secuencia, permutaciones, instEjecutadas, tareasPendientes);
+    s[nivel].asignarTareas(secuencia, permutaciones, instEjecutadas, tareasPendientes, hermanosRestantes[nivel]);
     tact += s[nivel].getTiempo();
     eact += s[nivel].getEnergia();
+
+    // cout << "s[" << nivel << "].isOcupado(): " << s[nivel].isOcupado() << endl;
 }
 
 bool solucion(vector<Ejecucion> tareasPendientes)
@@ -73,7 +92,7 @@ bool solucion(vector<Ejecucion> tareasPendientes)
 
 bool criterio(int nivel, vector<PlatUsage> s, vector<Ejecucion> tareasPendientes)
 {
-    return !tareasPendientes.empty() && s[nivel].isRealizable(tareasPendientes);
+    return !tareasPendientes.empty();
 }
 
 bool masHermanos(int nivel, vector<int> hermanosRestantes)
@@ -118,19 +137,50 @@ void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tas
 
     vector<int> instEjecutadas(n_tasks, 0);
 
+    int sols = 0;
     // Algoritmo
     do
     {
         generar(nivel, s, hermanosRestantes, tareasPendientes, permutaciones, tact, eact, instEjecutadas);
-        if (solucion(tareasPendientes) && tact < toa && eact <= eoa)
+
+        // cout << "Permutaciones: " << endl;
+        // for (auto combi : permutaciones)
+        // {
+        //     cout << "\t";
+        //     for (auto ej : combi)
+        //     {
+        //         cout << "T" << getId(ej.getTarea()) << (ej.isHT() ? "*" : "") << " ";
+        //     }
+        //     cout << endl;
+        // }
+
+        // cout << "Hermanos restantes: " << endl;
+        // for (auto num : hermanosRestantes)
+        // {
+        //     cout << num << " ";
+        // }
+        // cout << endl;
+
+        cout << "Nivel " << nivel << endl;
+        s[nivel].printInfo();
+        cout << "--------------------------------" << endl;
+
+        if (solucion(tareasPendientes))
         {
-            toa = tact;
-            eoa = eact;
-            soa = s;
+            if (tact < toa && eact <= eoa)
+            {
+                toa = tact;
+                eoa = eact;
+                soa = s;
+            }
+
+            sols++;
+            cout << "****************** SOLUCION (t = " << tact << ", e = " << eact << ") ******************" << endl;
         }
 
         if (criterio(nivel, s, tareasPendientes))
         {
+
             s.push_back(inicio);
             nivel++;
 
@@ -147,6 +197,7 @@ void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tas
                 retroceder(nivel, s, tact, eact, instEjecutadas, tareasPendientes);
             }
         }
-
     } while (nivel > 0);
+
+    cout << "Soluciones: " << sols << "\tTiempo óptimo: " << toa << "\tEnergía óptima: " << eoa << endl;
 }

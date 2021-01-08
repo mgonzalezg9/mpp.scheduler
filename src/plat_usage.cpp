@@ -14,6 +14,11 @@ PlatUsage::PlatUsage(Platform *plataforma)
     }
 
     sort(dispositivos.begin(), dispositivos.end());
+    // for (auto dev : dispositivos)
+    // {
+    //     cout << getDevId(dev.getDispositivo()) << " ";
+    // }
+    // cout << endl;
 }
 
 // Getters
@@ -27,6 +32,18 @@ vector<DevUsage> PlatUsage::getDispositivos()
 int PlatUsage::asignarCores(Task t, int numPendientes, bool ht)
 {
     int ejecutadasTotal = 0;
+
+    // Comprueba que la tarea a ejecutar no depende de una que se esté ejecutando ahora
+    int numDeps = getNumDeps(t);
+    int *dependencias = getDependencies(t);
+    for (int i = 0; i < numDeps; i++)
+    {
+        if (isEjecutando(dependencias[i]))
+        {
+            // No puede ejecutarse en este momento
+            return 0;
+        }
+    }
 
     for (vector<DevUsage>::iterator it = dispositivos.begin(); it != dispositivos.end(); ++it)
     {
@@ -106,49 +123,47 @@ double PlatUsage::getEnergia()
     return energia;
 }
 
-// Devuelve si es consistente el estado de la plataforma (las dependencias de las tareas están satisfechas)
-bool PlatUsage::isRealizable(vector<Ejecucion> tareasPendientes)
-{
-    set<int> pendientes = Ejecucion::getIds(tareasPendientes);
-    vector<Task> tareasEjecucion = getTareas();
+// Devuelve si se podría ejecutar la tarea t en la plataforma, según sus dependencias
+// bool PlatUsage::isRealizable(Task t, vector<Ejecucion> tareasPendientes)
+// {
+//     int idTarea = getId(t);
+//     int numDeps = getNumDeps(t);
+//     int *deps = getDependencies(t);
+//     set<int> pendientes = Ejecucion::getIds(tareasPendientes);
 
-    for (auto tarea : tareasEjecucion)
-    {
-        int idTarea = getId(tarea);
-        int numDeps = getNumDeps(tarea);
-        int *deps = getDependencies(tarea);
+//     for (int i = 0; i < numDeps; i++)
+//     {
+//         int dep = deps[i];
+//         // Comprueba que la dependencia ni esté pendiente de ejecutarse ni se esté ejecutando en este momento
+//         if (dep != idTarea && (pendientes.find(dep) != pendientes.end() || isEjecutando(dep)))
+//         {
+//             return false;
+//         }
+//     }
 
-        // Comprueba si las dependencias estás satisfechas
-        for (int i = 0; i < numDeps; i++)
-        {
-            int dep = deps[i];
-            if (dep != idTarea && pendientes.find(dep) != pendientes.end())
-            {
-                return false;
-            }
-        }
-    }
-
-    return true;
-}
+//     return true;
+// }
 
 // Asigna una tarea para su ejecución en el dispositivo
-void PlatUsage::asignarTareas(vector<Ejecucion> &tareasActuales, deque<vector<Ejecucion>> &permutaciones, vector<int> &instEjecutadas, vector<Ejecucion> &tareasPendientes)
+void PlatUsage::asignarTareas(vector<Ejecucion> &tareasActuales, deque<vector<Ejecucion>> &permutaciones, vector<int> &instEjecutadas, vector<Ejecucion> &tareasPendientes, int &hermanosRestantes)
 {
     int numAsignadas = 0;
     bool versionHT = false;
-    Task t;
+    Task tareaHT;
 
     for (int i = 0; i < (int)tareasActuales.size() && getCapacidad() > 0; i++)
     {
-        t = tareasActuales[i].getTarea();
+        Task t = tareasActuales[i].getTarea();
         bool ht = tareasActuales[i].isHT();
         int numPendientes = getInstRestantes(t, instEjecutadas[getId(t)]);
 
         // Añade a la pila la versión con HT
         if (!ht && isHTAplicable(t, numPendientes))
         {
-            permutaciones.push_front(Ejecucion::getHTVersion(t, tareasActuales));
+            tareaHT = t;
+            vector<Ejecucion> combinacionHT = Ejecucion::getHTVersion(tareaHT, tareasActuales);
+            permutaciones.push_front(combinacionHT);
+            hermanosRestantes++;
             versionHT = true;
         }
 
@@ -162,7 +177,10 @@ void PlatUsage::asignarTareas(vector<Ejecucion> &tareasActuales, deque<vector<Ej
             Ejecucion::remove(t, tareasPendientes);
         }
 
-        numAsignadas++;
+        if (numEjecutadas > 0)
+        {
+            numAsignadas++;
+        }
     }
 
     if (versionHT && numAsignadas == 1)
@@ -170,24 +188,22 @@ void PlatUsage::asignarTareas(vector<Ejecucion> &tareasActuales, deque<vector<Ej
         // Borra la de HT, explorando solo esa posibilidad
         vector<Ejecucion> secuenciaHT = permutaciones.front();
         permutaciones.pop_front();
+        hermanosRestantes--;
 
         // Deshace los cambios de la version sin HT
         deshacerEjecucion(instEjecutadas, tareasPendientes);
 
-        // Task t = getTareas().front();
-        int numPendientes = getInstRestantes(t, instEjecutadas[getId(t)]);
-        asignarCores(t, numPendientes, true);
-    }
-}
+        int numPendientes = getInstRestantes(tareaHT, instEjecutadas[getId(tareaHT)]);
+        int numEjecutadas = asignarCores(tareaHT, numPendientes, true);
+        instEjecutadas[getId(tareaHT)] += numEjecutadas;
 
-// Desaloja la plataforma por completo
-void PlatUsage::vaciar()
-{
-    // Vacía cada uno de los dispositivos
-    for (std::vector<DevUsage>::iterator it = dispositivos.begin(); it != dispositivos.end(); ++it)
-    {
-        it->vaciar();
+        if (isFinalizada(tareaHT, instEjecutadas[getId(tareaHT)]))
+        {
+            Ejecucion::remove(tareaHT, tareasPendientes);
+        }
     }
+
+    // cout << "Capacidad restante: " << getCapacidad() << endl;
 }
 
 // Devuelve el número de instrucciones que aún puede ejecutar el dispositivo
@@ -229,6 +245,19 @@ bool PlatUsage::isEjecutando(Task t)
     for (auto dev : dispositivos)
     {
         if (dev.isEjecutando(t))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Devuelve si se ejecuta la tarea con identificador idTarea en la plataforma
+bool PlatUsage::isEjecutando(int idTarea)
+{
+    for (auto dev : dispositivos)
+    {
+        if (dev.isEjecutando(idTarea))
         {
             return true;
         }

@@ -50,9 +50,6 @@ public:
     // Devuelve los cores que ocupa la tarea t
     int getCores(Task t);
 
-    // Limpia el mapa con la asociación de cores para cada tarea
-    void vaciar();
-
     // Devuelve el número de instrucciones que aún puede ejecutar el dispositivo
     int getCapacidad();
 
@@ -73,6 +70,9 @@ public:
 
     // Devuelve si una tarea t se está ejecutando en el dispositivo
     bool isEjecutando(Task t);
+
+    // Devuelve si una tarea con identificador idTarea se está ejecutando en el dispositivo
+    bool isEjecutando(int idTarea);
 
     // Devuelve si el dispositivo permitiria aplicar HT para el numero de instrucciones
     bool isHTAplicable(int numInstrucciones);

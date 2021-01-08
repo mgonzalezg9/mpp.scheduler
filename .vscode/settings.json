@@ -14,6 +14,7 @@
         "list": "cpp",
         "string": "cpp",
         "functional": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "iosfwd": "cpp"
     }
 }

@@ -52,6 +52,51 @@ bool Ejecucion::remove(Task t, vector<Ejecucion> &tareas)
     return false;
 }
 
+vector<Ejecucion> Ejecucion::validar(vector<Ejecucion> tareas)
+{
+    vector<Ejecucion> resultado;
+    set<int> pendientes = Ejecucion::getIds(tareas);
+
+    for (vector<Ejecucion>::iterator it = tareas.begin(); it != tareas.end(); ++it)
+    {
+        Task t = it->getTarea();
+        int idTarea = getId(t);
+        int numDeps = getNumDeps(t);
+        int *deps = getDependencies(t);
+
+        bool valida = true;
+        for (int i = 0; i < numDeps; i++)
+        {
+            int dep = deps[i];
+            // Comprueba que la dependencia no esté pendiente de ejecutarse
+            if (dep != idTarea && pendientes.find(dep) != pendientes.end())
+            {
+                valida = false;
+                break;
+            }
+        }
+
+        if (valida)
+        {
+            resultado.push_back(*it);
+        }
+    }
+
+    return resultado;
+}
+
+bool Ejecucion::isPresente(vector<Ejecucion> combinacion, vector<vector<Ejecucion>> combinaciones)
+{
+    for (auto elemento : combinaciones)
+    {
+        if (elemento == combinacion)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 Ejecucion::Ejecucion(Task tarea, bool ht)
 {
     this->tarea = tarea;
