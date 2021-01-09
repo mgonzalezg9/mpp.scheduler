@@ -16,7 +16,64 @@ using namespace std;
 
 // Funciones auxiliares
 
-vector<vector<Ejecucion>> getPermutaciones(vector<Ejecucion> tareas)
+// Devuelve una secuencia de tareas que se podrían ejecutar al tener las dependencias resueltas
+vector<Ejecucion> validar(vector<Ejecucion> tareas, vector<Ejecucion> tareasAnteriores)
+{
+    vector<Ejecucion> resultado;
+    set<int> pendientes = Ejecucion::getIds(tareas);
+
+    for (vector<Ejecucion>::iterator it = tareas.begin(); it != tareas.end(); ++it)
+    {
+        Task t = it->getTarea();
+        int idTarea = getId(t);
+        int numDeps = getNumDeps(t);
+        int *deps = getDependencies(t);
+
+        bool valida = true;
+        for (int i = 0; i < numDeps; i++)
+        {
+            int dep = deps[i];
+            // Comprueba que la dependencia no esté pendiente de ejecutarse
+            if (dep != idTarea && pendientes.find(dep) != pendientes.end())
+            {
+                valida = false;
+                break;
+            }
+        }
+
+        if (valida)
+        {
+            resultado.push_back(*it);
+        }
+    }
+
+    // Las tareas ejecutadas en el nivel anterior tienen prioridad
+    if (!tareasAnteriores.empty())
+    {
+        vector<Ejecucion> tareas = resultado; // Copia de resultado
+
+        // Calcula la intersección de las tareas anteriores y las planificadas
+        vector<Ejecucion> tareasEmpezadas;
+        sort(tareasAnteriores.begin(), tareasAnteriores.end());
+        sort(tareas.begin(), tareas.end());
+        set_intersection(tareasAnteriores.begin(), tareasAnteriores.end(),
+                         tareas.begin(), tareas.end(),
+                         back_inserter(tareasEmpezadas));
+
+        vector<Ejecucion> tareasNoEmpezadas;
+        set_difference(tareas.begin(), tareas.end(),
+                       tareasEmpezadas.begin(), tareasEmpezadas.end(),
+                       inserter(tareasNoEmpezadas, tareasNoEmpezadas.end()));
+
+        resultado.clear();
+        resultado.insert(resultado.end(), tareasEmpezadas.begin(), tareasEmpezadas.end());
+        resultado.insert(resultado.end(), tareasNoEmpezadas.begin(), tareasNoEmpezadas.end());
+    }
+
+    return resultado;
+}
+
+vector<vector<Ejecucion>> getPermutaciones(vector<Ejecucion> tareas, PlatUsage nivelAnterior)
 {
     vector<vector<Ejecucion>> perms;
 
@@ -31,7 +88,7 @@ vector<vector<Ejecucion>> getPermutaciones(vector<Ejecucion> tareas)
 
     do
     {
-        vector<Ejecucion> combinacion = Ejecucion::validar(tareas);
+        vector<Ejecucion> combinacion = validar(tareas, Ejecucion::crearTareas(nivelAnterior.getTareas()));
 
         if (!Ejecucion::isPresente(combinacion, perms))
         {
@@ -102,12 +159,12 @@ void formatSolucion(vector<PlatUsage> s, Task *sortedTasks, int nTasks, Platform
 
 // Esquema de backtracking
 
-void generar(int nivel, vector<PlatUsage> &s, vector<int> &hermanosRestantes, vector<Ejecucion> &tareasPendientes, deque<vector<Ejecucion>> &permutaciones, double &tact, double &eact, vector<int> &instEjecutadas)
+void generar(int nivel, vector<PlatUsage> &s, vector<int> &hermanosRestantes, vector<Ejecucion> &tareasPendientes, deque<vector<Ejecucion>> &permutaciones, double &tact, double &eact, vector<int> &instEjecutadas, PlatUsage nivelAnterior)
 {
     // Genera las permutaciones
     if (hermanosRestantes[nivel] == NIVEL_INEXPLORADO)
     {
-        vector<vector<Ejecucion>> nuevas = getPermutaciones(tareasPendientes);
+        vector<vector<Ejecucion>> nuevas = getPermutaciones(tareasPendientes, nivelAnterior);
 
         for (auto permutacion : nuevas)
         {
@@ -199,7 +256,7 @@ void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tas
     // Algoritmo
     do
     {
-        generar(nivel, s, hermanosRestantes, tareasPendientes, permutaciones, tact, eact, instEjecutadas);
+        generar(nivel, s, hermanosRestantes, tareasPendientes, permutaciones, tact, eact, instEjecutadas, s[nivel - 1]);
 
         // cout << "Permutaciones: " << endl;
         // for (auto combi : permutaciones)
@@ -253,6 +310,12 @@ void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tas
             }
         }
     } while (nivel > 0);
+
+    // for (auto level : soa)
+    // {
+    //     level.printInfo();
+    //     cout << "--------------------------------" << endl;
+    // }
 
     cout << /* "Soluciones: " << sols << */ "\tTiempo óptimo: " << toa << "\tEnergía óptima: " << eoa << endl;
 
