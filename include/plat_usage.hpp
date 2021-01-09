@@ -63,6 +63,9 @@ public:
     // Comprueba que se pueda ejecutar con HT la tarea t
     bool isHTAplicable(Task t, int numInstrucciones);
 
+    // Devuelve la solución en las estructuras de salida
+    void getSolucion(map<int, vector<Device>> &ejecuciones, vector<Task> &orden);
+
     // Imprime información sobre la plataforma para depuración
     void printInfo();
 };

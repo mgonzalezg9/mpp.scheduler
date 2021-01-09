@@ -279,10 +279,33 @@ bool PlatUsage::isHTAplicable(Task t, int numInstrucciones)
     return false;
 }
 
+// Devuelve la solución en las estructuras de salida
+void PlatUsage::getSolucion(map<int, vector<Device>> &ejecuciones, vector<Task> &orden)
+{
+    for (auto dev : dispositivos)
+    {
+        vector<Task> tareas = dev.getTareas();
+
+        for (auto t : tareas)
+        {
+            orden.push_back(t);
+
+            Device dispositivo;
+            dispositivo.id = dev.getIdDispositivo();
+            dispositivo.n_cores = dev.getCores(t);
+            dispositivo.hyperthreading = dev.isHTActivado();
+
+            vector<Device> ejs = ejecuciones[getId(t)];
+            ejs.push_back(dispositivo);
+            ejecuciones[getId(t)] = ejs;
+        }
+    }
+}
+
 // Comprueba que se pueda ejecutar con HT la tarea t
 void PlatUsage::printInfo()
 {
-    for (std::vector<DevUsage>::iterator it = dispositivos.begin(); it != dispositivos.end(); ++it)
+    for (vector<DevUsage>::iterator it = dispositivos.begin(); it != dispositivos.end(); ++it)
     {
         DevUsage uso = *it;
         uso.printInfo();

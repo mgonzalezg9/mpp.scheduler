@@ -42,6 +42,64 @@ vector<vector<Ejecucion>> getPermutaciones(vector<Ejecucion> tareas)
     return perms;
 }
 
+void formatSolucion(vector<PlatUsage> s, Task *sortedTasks, int nTasks, Platform *selectedDevs, int nDevices)
+{
+    // Inicialización
+    vector<Task> orden;
+
+    vector<Device> listaVacia;
+    map<int, vector<Device>> ejecuciones;
+    for (int i = 0; i < nTasks; i++)
+    {
+        ejecuciones[i] = listaVacia;
+    }
+
+    // for (int i = 0; i < nTasks; i++)
+    // {
+    //     Platform inicial;
+    //     inicial.n_devices = nDevices;
+    //     inicial.devices = new Device[nDevices];
+    //     for (int i = 0; i < nDevices; i++)
+    //     {
+    //         inicial.devices[i].id = i;
+    //         inicial.devices[i].n_cores = 0;
+    //     }
+    //     usoTareas.push_back(inicial);
+    // }
+
+    // Obtención de la solución para los vectores auxiliares
+    for (auto nodo : s)
+    {
+        nodo.getSolucion(ejecuciones, orden);
+    }
+
+    // Copiado al array de tareas ordenadas
+    set<Task> tareasInsertadas;
+    int cont = 0;
+    for (auto it = orden.begin(); it != orden.end(); it++)
+    {
+        if (tareasInsertadas.find(*it) == tareasInsertadas.end())
+        {
+            sortedTasks[cont] = *it;
+            tareasInsertadas.insert(*it);
+            cont++;
+        }
+    }
+
+    // Copiado al array con el uso de las plataformas
+    for (int i = 0; i < nTasks; i++)
+    {
+        vector<Device> dispositivos = ejecuciones[i];
+        selectedDevs[i].n_devices = dispositivos.size();
+
+        selectedDevs[i].devices = new Device[selectedDevs[i].n_devices];
+        for (int j = 0; j < selectedDevs[i].n_devices; j++)
+        {
+            selectedDevs[i].devices[j] = dispositivos[j];
+        }
+    }
+}
+
 // Esquema de backtracking
 
 void generar(int nivel, vector<PlatUsage> &s, vector<int> &hermanosRestantes, vector<Ejecucion> &tareasPendientes, deque<vector<Ejecucion>> &permutaciones, double &tact, double &eact, vector<int> &instEjecutadas)
@@ -110,7 +168,7 @@ void retroceder(int &nivel, vector<PlatUsage> &s, double &tact, double &eact, ve
     nivel--;
 }
 
-void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tasks, Platform *selected_devs, double time, double energy)
+void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tasks, Platform *selected_devs, double &time, double &energy)
 {
     // Inicialización
     int nivel = 1;
@@ -137,7 +195,7 @@ void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tas
 
     vector<int> instEjecutadas(n_tasks, 0);
 
-    int sols = 0;
+    // int sols = 0;
     // Algoritmo
     do
     {
@@ -165,17 +223,14 @@ void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tas
         s[nivel].printInfo();
         cout << "--------------------------------" << endl;
 
-        if (solucion(tareasPendientes))
+        if (solucion(tareasPendientes) && tact < toa && eact <= eoa)
         {
-            if (tact < toa && eact <= eoa)
-            {
-                toa = tact;
-                eoa = eact;
-                soa = s;
-            }
+            toa = tact;
+            eoa = eact;
+            soa = s;
 
-            sols++;
-            cout << "****************** SOLUCION (t = " << tact << ", e = " << eact << ") ******************" << endl;
+            // sols++;
+            cout << "****************** NEW BEST (t = " << tact << ", e = " << eact << ") ******************" << endl;
         }
 
         if (criterio(nivel, s, tareasPendientes))
@@ -199,5 +254,10 @@ void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tas
         }
     } while (nivel > 0);
 
-    cout << "Soluciones: " << sols << "\tTiempo óptimo: " << toa << "\tEnergía óptima: " << eoa << endl;
+    cout << /* "Soluciones: " << sols << */ "\tTiempo óptimo: " << toa << "\tEnergía óptima: " << eoa << endl;
+
+    // Reconstrucción de la solución
+    time = toa;
+    energy = eoa;
+    formatSolucion(soa, sorted_tasks, n_tasks, selected_devs, platform->n_devices);
 }

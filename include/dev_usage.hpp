@@ -31,6 +31,9 @@ public:
     bool isHTActivado();
     Device getDispositivo();
 
+    // Devuelve el id del dispositivo cuyo uso se mide
+    int getIdDispositivo();
+
     // Devuelve las tareas que se están ejecutando
     vector<Task> getTareas();
 

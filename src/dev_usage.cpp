@@ -27,6 +27,11 @@ Device DevUsage::getDispositivo()
     return dispositivo;
 }
 
+int DevUsage::getIdDispositivo()
+{
+    return getDevId(dispositivo);
+}
+
 vector<Task> DevUsage::getTareas()
 {
     vector<Task> keys;
@@ -151,7 +156,7 @@ void DevUsage::deshacerEjecucion(vector<int> &instruccionesEjecutadas, vector<Ej
         int instrucciones = getInstruccionesEjecutadas(tarea);
         instruccionesEjecutadas[idTarea] -= instrucciones;
 
-        if (pendientes.find(getId(tarea)) == pendientes.end())
+        if (pendientes.find(idTarea) == pendientes.end())
         {
             Ejecucion ej(tarea, false);
             tareasPendientes.push_back(ej);
@@ -207,6 +212,7 @@ int DevUsage::asignarCores(Task tarea, int numPendientes, bool ht)
             instAsignadas = coresLibres * instCore * FACTOR_HYPERTHREADING;
             this->ht = true;
         }
+        return instAsignadas;
     }
     else
     {
