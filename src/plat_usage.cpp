@@ -33,18 +33,6 @@ int PlatUsage::asignarCores(Task t, int numPendientes, bool ht)
 {
     int ejecutadasTotal = 0;
 
-    // Comprueba que la tarea a ejecutar no depende de una que se esté ejecutando ahora
-    int numDeps = getNumDeps(t);
-    int *dependencias = getDependencies(t);
-    for (int i = 0; i < numDeps; i++)
-    {
-        if (isEjecutando(dependencias[i]))
-        {
-            // No puede ejecutarse en este momento
-            return 0;
-        }
-    }
-
     for (vector<DevUsage>::iterator it = dispositivos.begin(); it != dispositivos.end(); ++it)
     {
         int numEjecutadas = it->asignarCores(t, numPendientes, ht);

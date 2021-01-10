@@ -54,7 +54,6 @@ vector<Ejecucion> validar(vector<Ejecucion> tareas, vector<Ejecucion> tareasAnte
 
         // Calcula la intersección de las tareas anteriores y las planificadas
         vector<Ejecucion> tareasEmpezadas;
-        sort(tareasAnteriores.begin(), tareasAnteriores.end());
         sort(tareas.begin(), tareas.end());
         set_intersection(tareasAnteriores.begin(), tareasAnteriores.end(),
                          tareas.begin(), tareas.end(),
@@ -79,6 +78,8 @@ vector<vector<Ejecucion>> getPermutaciones(vector<Ejecucion> tareas, PlatUsage n
 
     // Ordenado al principio
     sort(tareas.begin(), tareas.end());
+    vector<Ejecucion> tareasAnterior = Ejecucion::crearTareas(nivelAnterior.getTareas());
+    sort(tareasAnterior.begin(), tareasAnterior.end());
 
     // for (auto ej : tareas)
     // {
@@ -88,7 +89,7 @@ vector<vector<Ejecucion>> getPermutaciones(vector<Ejecucion> tareas, PlatUsage n
 
     do
     {
-        vector<Ejecucion> combinacion = validar(tareas, Ejecucion::crearTareas(nivelAnterior.getTareas()));
+        vector<Ejecucion> combinacion = validar(tareas, tareasAnterior);
 
         if (!Ejecucion::isPresente(combinacion, perms))
         {
@@ -149,7 +150,6 @@ void formatSolucion(vector<PlatUsage> s, Task *sortedTasks, int nTasks, Platform
         vector<Device> dispositivos = ejecuciones[i];
         selectedDevs[i].n_devices = dispositivos.size();
 
-        selectedDevs[i].devices = new Device[selectedDevs[i].n_devices];
         for (int j = 0; j < selectedDevs[i].n_devices; j++)
         {
             selectedDevs[i].devices[j] = dispositivos[j];
@@ -317,7 +317,7 @@ void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tas
     //     cout << "--------------------------------" << endl;
     // }
 
-    cout << /* "Soluciones: " << sols << */ "\tTiempo óptimo: " << toa << "\tEnergía óptima: " << eoa << endl;
+    // cout << /* "Soluciones: " << sols << */ "\tTiempo óptimo: " << toa << "\tEnergía óptima: " << eoa << endl;
 
     // Reconstrucción de la solución
     time = toa;

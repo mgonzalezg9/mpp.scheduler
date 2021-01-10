@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <set>
 #include <iostream>
+#include <cmath>
 
 #define FACTOR_HYPERTHREADING 2
 
@@ -217,7 +218,8 @@ int DevUsage::asignarCores(Task tarea, int numPendientes, bool ht)
     else
     {
         // Calcula el número de cores necesarios
-        int coresNecesarios = numPendientes / instCore;
+        int coresNecesarios = ceil(((double)numPendientes) / instCore);
+        // cout << "Necesita " << ((double)numPendientes) / instCore << " cores" << endl;
 
         if (coresNecesarios > coresLibres)
         {
@@ -227,7 +229,7 @@ int DevUsage::asignarCores(Task tarea, int numPendientes, bool ht)
         else
         {
             asignarTarea(tarea, coresNecesarios);
-            instAsignadas = coresNecesarios * instCore;
+            instAsignadas = numPendientes;
         }
     }
 
