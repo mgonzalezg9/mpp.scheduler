@@ -12,22 +12,22 @@ using namespace std;
 class DevUsage
 {
 private:
-    map<Task, int> cores_tarea;
+    map<Task, int> instTarea;
     bool ht;
     Device dispositivo;
 
     // Asigna una tarea para su ejecución en el dispositivo
-    void asignarTarea(Ejecucion tarea, int numCores);
+    void asignarTarea(Ejecucion tarea, int numInstrucciones);
 
     // Asigna una tarea para su ejecución en el dispositivo
-    void asignarTarea(Task tarea, int numCores);
+    void asignarTarea(Task tarea, int numInstrucciones);
 
 public:
     // Constructores
     DevUsage(Device dispositivo);
 
     // Getters
-    map<Task, int> getCores_tarea();
+    map<Task, int> getInstTarea();
     bool isHTActivado();
     Device getDispositivo();
 
@@ -61,6 +61,9 @@ public:
 
     // Deshace las tareas que puedan estar ejecutandose dentro del cluster
     void deshacerEjecucion(vector<int> &instruccionesEjecutadas, vector<Ejecucion> &tareasPendientes);
+
+    // Devuelve el número total de instrucciones ejecutadas
+    int getInstruccionesEjecutadas();
 
     // Devuelve el número de cores ocupados
     int getCoresOcupados();

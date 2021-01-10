@@ -13,9 +13,9 @@ DevUsage::DevUsage(Device dispositivo)
 }
 
 // Getters
-map<Task, int> DevUsage::getCores_tarea()
+map<Task, int> DevUsage::getInstTarea()
 {
-    return cores_tarea;
+    return instTarea;
 }
 
 bool DevUsage::isHTActivado()
@@ -36,7 +36,7 @@ int DevUsage::getIdDispositivo()
 vector<Task> DevUsage::getTareas()
 {
     vector<Task> keys;
-    for (map<Task, int>::iterator it = cores_tarea.begin(); it != cores_tarea.end(); ++it)
+    for (map<Task, int>::iterator it = instTarea.begin(); it != instTarea.end(); ++it)
     {
         keys.push_back(it->first);
     }
@@ -46,14 +46,14 @@ vector<Task> DevUsage::getTareas()
 // Devuelve si el dispositivo ejecuta alguna tarea
 bool DevUsage::isOcupado()
 {
-    return !cores_tarea.empty();
+    return !instTarea.empty();
 }
 
 // Devuelve el incremento en el tiempo que supone el uso actual del dispositivo
 double DevUsage::getTiempo()
 {
     double maxTiempo = 0.0;
-    for (map<Task, int>::iterator it = cores_tarea.begin(); it != cores_tarea.end(); ++it)
+    for (map<Task, int>::iterator it = instTarea.begin(); it != instTarea.end(); ++it)
     {
         Task tarea = it->first;
 
@@ -80,17 +80,17 @@ double DevUsage::getEnergia()
 }
 
 // Asigna una tarea para su ejecución en el dispositivo
-void DevUsage::asignarTarea(Ejecucion tarea, int numCores)
+void DevUsage::asignarTarea(Ejecucion tarea, int numInstrucciones)
 {
-    asignarTarea(tarea.getTarea(), numCores);
+    asignarTarea(tarea.getTarea(), numInstrucciones);
 }
 
 // Asigna una tarea para su ejecución en el dispositivo
-void DevUsage::asignarTarea(Task tarea, int numCores)
+void DevUsage::asignarTarea(Task tarea, int numInstrucciones)
 {
-    if (numCores > 0)
+    if (numInstrucciones > 0)
     {
-        cores_tarea[tarea] = numCores;
+        instTarea[tarea] = numInstrucciones;
     }
 
     // cout << numCores << " " << cores_tarea[tarea] << endl;
@@ -99,31 +99,44 @@ void DevUsage::asignarTarea(Task tarea, int numCores)
 // Devuelve los cores que ocupa la tarea t
 int DevUsage::getCores(Task t)
 {
-    return cores_tarea[t];
+    if (ht)
+    {
+        return getNumCores(dispositivo);
+    }
+    else
+    {
+        return getInstruccionesEjecutadas(t) / getInstCore(dispositivo);
+    }
 }
 
 // Devuelve las instrucciones que está ejecutando la tarea t
 int DevUsage::getInstruccionesEjecutadas(Task t)
 {
-    int numInstrucciones = getCores(t) * getInstCore(dispositivo);
-    if (ht)
-    {
-        numInstrucciones *= FACTOR_HYPERTHREADING;
-    }
+    return instTarea[t];
+}
 
-    return numInstrucciones;
+// Devuelve el número de instrucciones ejecutadas
+int DevUsage::getInstruccionesEjecutadas()
+{
+    int instrucciones = 0;
+    for (map<Task, int>::iterator it = instTarea.begin(); it != instTarea.end(); ++it)
+    {
+        instrucciones += it->second;
+    }
+    return instrucciones;
 }
 
 // Devuelve el número de cores ocupados
 int DevUsage::getCoresOcupados()
 {
-    int numOcupados = 0;
-    for (map<Task, int>::iterator it = cores_tarea.begin(); it != cores_tarea.end(); ++it)
+    if (ht)
     {
-        int numCores = it->second;
-        numOcupados += numCores;
+        return getNumCores(dispositivo);
     }
-    return numOcupados;
+    else
+    {
+        return getInstruccionesEjecutadas() / getInstCore(dispositivo);
+    }
 }
 
 // Devuelve el número de cores libres
@@ -135,13 +148,13 @@ int DevUsage::getCoresLibres()
 // Devuelve el número de instrucciones que aún puede ejecutar el dispositivo
 int DevUsage::getCapacidad()
 {
-    return getCoresLibres() * getInstCore(dispositivo);
+    return getNumCores(dispositivo) * getInstCore(dispositivo) - getInstruccionesEjecutadas();
 }
 
-// Devuelve el número de instrucciones que aún puede ejecutar el dispositivo si se habilita HT
+// Devuelve el número de instrucciones que puede ejecutar el dispositivo si se habilita HT
 int DevUsage::getCapacidadHT()
 {
-    return getCapacidad() * FACTOR_HYPERTHREADING;
+    return getNumCores(dispositivo) * getInstCore(dispositivo) * FACTOR_HYPERTHREADING;
 }
 
 // Deshace las tareas que puedan estar ejecutandose dentro del cluster
@@ -149,7 +162,7 @@ void DevUsage::deshacerEjecucion(vector<int> &instruccionesEjecutadas, vector<Ej
 {
     set<int> pendientes = Ejecucion::getIds(tareasPendientes);
 
-    for (map<Task, int>::iterator it = cores_tarea.begin(); it != cores_tarea.end(); ++it)
+    for (map<Task, int>::iterator it = instTarea.begin(); it != instTarea.end(); ++it)
     {
         Task tarea = it->first;
         int idTarea = getId(tarea);
@@ -164,30 +177,32 @@ void DevUsage::deshacerEjecucion(vector<int> &instruccionesEjecutadas, vector<Ej
         }
     }
 
-    // Reset del mapa
-    cores_tarea.clear();
+    // Reset
+    instTarea.clear();
     ht = false;
 }
 
 // Devuelve si una tarea t se está ejecutando en el dispositivo
 bool DevUsage::isEjecutando(Task t)
 {
-    auto it = cores_tarea.find(t);
-    return it != cores_tarea.end();
+    return instTarea.find(t) != instTarea.end();
 }
 
 // Devuelve si una tarea con identiicador t se está ejecutando en el dispositivo
 bool DevUsage::isEjecutando(int idTarea)
 {
-    for (map<Task, int>::iterator it = cores_tarea.begin(); it != cores_tarea.end(); ++it)
-    {
-        Task tarea = it->first;
-        if (getId(tarea) == idTarea)
-        {
-            return true;
-        }
-    }
-    return false;
+    Task t;
+    t.id = idTarea;
+    return isEjecutando(t);
+    // for (map<Task, int>::iterator it = instTarea.begin(); it != instTarea.end(); ++it)
+    // {
+    //     Task tarea = it->first;
+    //     if (getId(tarea) == idTarea)
+    //     {
+    //         return true;
+    //     }
+    // }
+    // return false;
 }
 
 // Devuelve si el dispositivo permitiria aplicar HT para el numero de instrucciones
@@ -209,8 +224,8 @@ int DevUsage::asignarCores(Task tarea, int numPendientes, bool ht)
     {
         if (isHTAplicable(numPendientes))
         {
-            asignarTarea(tarea, coresLibres);
-            instAsignadas = coresLibres * instCore * FACTOR_HYPERTHREADING;
+            instAsignadas = numPendientes;
+            asignarTarea(tarea, instAsignadas);
             this->ht = true;
         }
         return instAsignadas;
@@ -223,14 +238,13 @@ int DevUsage::asignarCores(Task tarea, int numPendientes, bool ht)
 
         if (coresNecesarios > coresLibres)
         {
-            asignarTarea(tarea, coresLibres);
             instAsignadas = coresLibres * instCore;
         }
         else
         {
-            asignarTarea(tarea, coresNecesarios);
             instAsignadas = numPendientes;
         }
+        asignarTarea(tarea, instAsignadas);
     }
 
     return instAsignadas;
