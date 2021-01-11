@@ -21,6 +21,11 @@ struct Task
 	{
 		return id == other.id;
 	}
+
+	bool operator!=(const Task &other) const
+	{
+		return id != other.id;
+	}
 };
 
 int getId(Task t);

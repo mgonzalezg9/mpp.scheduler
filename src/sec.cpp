@@ -187,11 +187,11 @@ void generar(int nivel, vector<PlatUsage> &s, vector<int> &hermanosRestantes, ve
     vector<Ejecucion> secuencia = permutaciones.front();
     permutaciones.pop_front();
 
-    // for (auto ej : secuencia)
-    // {
-    //     cout << "T" << getId(ej.getTarea()) << (ej.isHT() ? "*" : "") << " ";
-    // }
-    // cout << endl;
+    for (auto ej : secuencia)
+    {
+        cout << "T" << getId(ej.getTarea()) << (ej.isHT() ? "*" : "") << " ";
+    }
+    cout << endl;
 
     hermanosRestantes[nivel]--;
 
@@ -286,9 +286,9 @@ void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tas
         // }
         // cout << endl;
 
-        // cout << "Nivel " << nivel << endl;
-        // s[nivel].printInfo();
-        // cout << "--------------------------------" << endl;
+        cout << "Nivel " << nivel << endl;
+        s[nivel].printInfo();
+        cout << "--------------------------------" << endl;
 
         if (solucion(tareasPendientes))
         {
@@ -345,7 +345,7 @@ void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tas
     //     cout << "--------------------------------" << endl;
     // }
 
-    cout << "Soluciones: " << sols << "\tTiempo óptimo: " << toa << "\tEnergía óptima: " << eoa << endl;
+    // cout << "Soluciones: " << sols << "\tTiempo óptimo: " << toa << "\tEnergía óptima: " << eoa << endl;
 
     // Reconstrucción de la solución
     time = toa;

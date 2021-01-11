@@ -36,14 +36,15 @@ vector<Ejecucion> Ejecucion::crearTareas(set<Task> tareas)
 
 vector<Ejecucion> Ejecucion::getHTVersion(Task t, vector<Ejecucion> tareas)
 {
-    vector<Ejecucion> htVersion = tareas;
+    vector<Ejecucion> htVersion;
+    Ejecucion ej(t, true);
+    htVersion.push_back(ej);
 
-    for (std::vector<Ejecucion>::iterator it = htVersion.begin(); it != htVersion.end(); ++it)
+    for (std::vector<Ejecucion>::iterator it = tareas.begin(); it != tareas.end(); ++it)
     {
-        if (it->getTarea() == t)
+        if (it->getTarea() != t)
         {
-            it->activarHT();
-            return htVersion;
+            htVersion.push_back(*it);
         }
     }
 

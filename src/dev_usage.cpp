@@ -208,7 +208,7 @@ bool DevUsage::isEjecutando(int idTarea)
 // Devuelve si el dispositivo permitiria aplicar HT para el numero de instrucciones
 bool DevUsage::isHTAplicable(int numInstrucciones)
 {
-    return !isOcupado() && numInstrucciones == getCapacidadHT();
+    return !isHTActivado() && numInstrucciones == getCapacidadHT();
 }
 
 // Asigna la mayor cantidad posible de cores a la tarea para que ejecute las instrucciones que tiene pendientes
@@ -222,7 +222,7 @@ int DevUsage::asignarCores(Task tarea, int numPendientes, bool ht)
 
     if (ht)
     {
-        if (isHTAplicable(numPendientes))
+        if (isHTAplicable(numPendientes) && !isOcupado())
         {
             instAsignadas = numPendientes;
             asignarTarea(tarea, instAsignadas);
