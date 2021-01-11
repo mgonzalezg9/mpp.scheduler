@@ -14,11 +14,6 @@ PlatUsage::PlatUsage(Platform *plataforma)
     }
 
     sort(dispositivos.begin(), dispositivos.end());
-    // for (auto dev : dispositivos)
-    // {
-    //     cout << getDevId(dev.getDispositivo()) << " ";
-    // }
-    // cout << endl;
 }
 
 // Getters
@@ -36,7 +31,6 @@ int PlatUsage::asignarCores(Task t, int numPendientes, bool ht)
     for (vector<DevUsage>::iterator it = dispositivos.begin(); it != dispositivos.end(); ++it)
     {
         int numEjecutadas = it->asignarCores(t, numPendientes, ht);
-        // cout << "T" << t.id << ": " << numEjecutadas << " ocupada: " << it->isOcupado() << endl;
 
         ejecutadasTotal += numEjecutadas;
         numPendientes -= numEjecutadas;
@@ -111,27 +105,6 @@ double PlatUsage::getEnergia()
     return energia;
 }
 
-// Devuelve si se podría ejecutar la tarea t en la plataforma, según sus dependencias
-// bool PlatUsage::isRealizable(Task t, vector<Ejecucion> tareasPendientes)
-// {
-//     int idTarea = getId(t);
-//     int numDeps = getNumDeps(t);
-//     int *deps = getDependencies(t);
-//     set<int> pendientes = Ejecucion::getIds(tareasPendientes);
-
-//     for (int i = 0; i < numDeps; i++)
-//     {
-//         int dep = deps[i];
-//         // Comprueba que la dependencia ni esté pendiente de ejecutarse ni se esté ejecutando en este momento
-//         if (dep != idTarea && (pendientes.find(dep) != pendientes.end() || isEjecutando(dep)))
-//         {
-//             return false;
-//         }
-//     }
-
-//     return true;
-// }
-
 // Asigna una tarea para su ejecución en el dispositivo
 void PlatUsage::asignarTareas(vector<Ejecucion> &tareasActuales, deque<vector<Ejecucion>> &permutaciones, vector<int> &instEjecutadas, vector<Ejecucion> &tareasPendientes, int &hermanosRestantes)
 {
@@ -146,7 +119,6 @@ void PlatUsage::asignarTareas(vector<Ejecucion> &tareasActuales, deque<vector<Ej
         int numPendientes = getInstRestantes(t, instEjecutadas[getId(t)]);
 
         // Añade a la pila la versión con HT
-        // int devHT;
         if (!ht && isHTAplicable(t, numPendientes))
         {
             tareaHT = t;
@@ -165,7 +137,6 @@ void PlatUsage::asignarTareas(vector<Ejecucion> &tareasActuales, deque<vector<Ej
 
         // Coge la tarea y actualiza las instrucciones pendientes
         int numEjecutadas = asignarCores(t, numPendientes, ht);
-        // cout << "Se han ejecutado " << numEjecutadas << endl;
         instEjecutadas[getId(t)] += numEjecutadas;
 
         if (isFinalizada(t, instEjecutadas[getId(t)]))
@@ -214,7 +185,7 @@ int PlatUsage::getCapacidad()
 // Deshace las tareas que puedan estar ejecutandose dentro del cluster
 void PlatUsage::deshacerEjecucion(vector<int> &instruccionesEjecutadas, vector<Ejecucion> &tareasPendientes)
 {
-    for (std::vector<DevUsage>::iterator it = dispositivos.begin(); it != dispositivos.end(); ++it)
+    for (vector<DevUsage>::iterator it = dispositivos.begin(); it != dispositivos.end(); ++it)
     {
         it->deshacerEjecucion(instruccionesEjecutadas, tareasPendientes);
     }

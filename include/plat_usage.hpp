@@ -39,9 +39,6 @@ public:
     // Devuelve el incremento de energía que supone el uso actual de la plataforma
     double getEnergia();
 
-    // Devuelve si se podría ejecutar la tarea t en la plataforma, según sus dependencias
-    // bool isRealizable(Task t, vector<Ejecucion> tareasPendientes);
-
     // Asigna una tarea para su ejecución en el dispositivo
     void asignarTareas(vector<Ejecucion> &tareasActuales, deque<vector<Ejecucion>> &permutaciones, vector<int> &instEjecutadas, vector<Ejecucion> &tareasPendientes, int &hermanosRestantes);
 

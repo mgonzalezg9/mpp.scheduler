@@ -30,9 +30,6 @@ public:
     // Borra la tarea t del vector de tareas
     static bool remove(Task t, vector<Ejecucion> &tareas);
 
-    // Devuelve una secuencia de tareas que se podrían ejecutar al tener las dependencias resueltas
-    // static vector<Ejecucion> validar(vector<Ejecucion> tareas, vector<PlatUsage> nivelAnterior);
-
     // Comprueba si la combinación se encuentra entre la lista de combinaciones
     static bool isPresente(vector<Ejecucion> combinacion, vector<vector<Ejecucion>> combinaciones);
 

@@ -82,6 +82,7 @@ vector<vector<Ejecucion>> getPermutaciones(vector<Ejecucion> tareas, PlatUsage n
     // Desecha las tareas cuyas dependencias están sin resolver
     tareas = validarDependencias(tareas, tareasAnteriores);
 
+    // cout << "Tareas sin dependencias" << endl;
     // for (auto ej : tareas)
     // {
     //     cout << "T" << getId(ej.getTarea()) << (ej.isHT() ? "*" : "") << " ";
@@ -94,7 +95,6 @@ vector<vector<Ejecucion>> getPermutaciones(vector<Ejecucion> tareas, PlatUsage n
 
     sort(tareasEmpezadas.begin(), tareasEmpezadas.end());
     sort(tareasNoEmpezadas.begin(), tareasNoEmpezadas.end());
-
     do
     {
         do
@@ -121,19 +121,6 @@ void formatSolucion(vector<PlatUsage> s, Task *sortedTasks, int nTasks, Platform
     {
         ejecuciones[i] = listaVacia;
     }
-
-    // for (int i = 0; i < nTasks; i++)
-    // {
-    //     Platform inicial;
-    //     inicial.n_devices = nDevices;
-    //     inicial.devices = new Device[nDevices];
-    //     for (int i = 0; i < nDevices; i++)
-    //     {
-    //         inicial.devices[i].id = i;
-    //         inicial.devices[i].n_cores = 0;
-    //     }
-    //     usoTareas.push_back(inicial);
-    // }
 
     // Obtención de la solución para los vectores auxiliares
     for (auto nodo : s)
@@ -187,11 +174,11 @@ void generar(int nivel, vector<PlatUsage> &s, vector<int> &hermanosRestantes, ve
     vector<Ejecucion> secuencia = permutaciones.front();
     permutaciones.pop_front();
 
-    for (auto ej : secuencia)
-    {
-        cout << "T" << getId(ej.getTarea()) << (ej.isHT() ? "*" : "") << " ";
-    }
-    cout << endl;
+    // for (auto ej : secuencia)
+    // {
+    //     cout << "T" << getId(ej.getTarea()) << (ej.isHT() ? "*" : "") << " ";
+    // }
+    // cout << endl;
 
     hermanosRestantes[nivel]--;
 
@@ -206,8 +193,6 @@ void generar(int nivel, vector<PlatUsage> &s, vector<int> &hermanosRestantes, ve
     s[nivel].asignarTareas(secuencia, permutaciones, instEjecutadas, tareasPendientes, hermanosRestantes[nivel]);
     tact += s[nivel].getTiempo();
     eact += s[nivel].getEnergia();
-
-    // cout << "s[" << nivel << "].isOcupado(): " << s[nivel].isOcupado() << endl;
 }
 
 bool solucion(vector<Ejecucion> tareasPendientes)
@@ -215,7 +200,7 @@ bool solucion(vector<Ejecucion> tareasPendientes)
     return tareasPendientes.empty();
 }
 
-bool criterio(int nivel, vector<PlatUsage> s, vector<Ejecucion> tareasPendientes)
+bool criterio(vector<Ejecucion> tareasPendientes)
 {
     return !tareasPendientes.empty();
 }
@@ -262,64 +247,23 @@ void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tas
 
     vector<int> instEjecutadas(n_tasks, 0);
 
-    int sols = 0;
     // Algoritmo
     do
     {
         generar(nivel, s, hermanosRestantes, tareasPendientes, permutaciones, tact, eact, instEjecutadas, s[nivel - 1]);
 
-        // cout << "Permutaciones: " << endl;
-        // for (auto combi : permutaciones)
-        // {
-        //     cout << "\t";
-        //     for (auto ej : combi)
-        //     {
-        //         cout << "T" << getId(ej.getTarea()) << (ej.isHT() ? "*" : "") << " ";
-        //     }
-        //     cout << endl;
-        // }
+        // cout << "Nivel " << nivel << endl;
+        // s[nivel].printInfo();
+        // cout << "--------------------------------" << endl;
 
-        // cout << "Hermanos restantes: " << endl;
-        // for (auto num : hermanosRestantes)
-        // {
-        //     cout << num << " ";
-        // }
-        // cout << endl;
-
-        cout << "Nivel " << nivel << endl;
-        s[nivel].printInfo();
-        cout << "--------------------------------" << endl;
-
-        if (solucion(tareasPendientes))
+        if (solucion(tareasPendientes) && tact <= toa && eact <= eoa)
         {
-            // for (auto level : s)
-            // {
-            //     auto tareas = level.getTareas();
-            //     for (auto t : tareas)
-            //     {
-            //         cout << "T" << t.id << " ";
-            //     }
-            // }
-            // cout << endl;
-
-            if (tact <= toa && eact <= eoa)
-            {
-                toa = tact;
-                eoa = eact;
-                soa = s;
-            }
-
-            // for (auto level : s)
-            // {
-            //     level.printInfo();
-            //     cout << "--------------------------------" << endl;
-            // }
-
-            sols++;
-            cout << "****************** SOL (t = " << tact << ", e = " << eact << ") ******************" << endl;
+            toa = tact;
+            eoa = eact;
+            soa = s;
         }
 
-        if (criterio(nivel, s, tareasPendientes))
+        if (criterio(tareasPendientes))
         {
             s.push_back(inicio);
             nivel++;
@@ -338,14 +282,6 @@ void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tas
             }
         }
     } while (nivel > 0);
-
-    // for (auto level : soa)
-    // {
-    //     level.printInfo();
-    //     cout << "--------------------------------" << endl;
-    // }
-
-    // cout << "Soluciones: " << sols << "\tTiempo óptimo: " << toa << "\tEnergía óptima: " << eoa << endl;
 
     // Reconstrucción de la solución
     time = toa;

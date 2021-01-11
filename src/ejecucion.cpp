@@ -40,7 +40,7 @@ vector<Ejecucion> Ejecucion::getHTVersion(Task t, vector<Ejecucion> tareas)
     Ejecucion ej(t, true);
     htVersion.push_back(ej);
 
-    for (std::vector<Ejecucion>::iterator it = tareas.begin(); it != tareas.end(); ++it)
+    for (vector<Ejecucion>::iterator it = tareas.begin(); it != tareas.end(); ++it)
     {
         if (it->getTarea() != t)
         {

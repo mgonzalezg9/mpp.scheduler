@@ -92,8 +92,6 @@ void DevUsage::asignarTarea(Task tarea, int numInstrucciones)
     {
         instTarea[tarea] = numInstrucciones;
     }
-
-    // cout << numCores << " " << cores_tarea[tarea] << endl;
 }
 
 // Devuelve los cores que ocupa la tarea t
@@ -188,21 +186,12 @@ bool DevUsage::isEjecutando(Task t)
     return instTarea.find(t) != instTarea.end();
 }
 
-// Devuelve si una tarea con identiicador t se está ejecutando en el dispositivo
+// Devuelve si una tarea con identificador t se está ejecutando en el dispositivo
 bool DevUsage::isEjecutando(int idTarea)
 {
     Task t;
     t.id = idTarea;
     return isEjecutando(t);
-    // for (map<Task, int>::iterator it = instTarea.begin(); it != instTarea.end(); ++it)
-    // {
-    //     Task tarea = it->first;
-    //     if (getId(tarea) == idTarea)
-    //     {
-    //         return true;
-    //     }
-    // }
-    // return false;
 }
 
 // Devuelve si el dispositivo permitiria aplicar HT para el numero de instrucciones
@@ -234,7 +223,6 @@ int DevUsage::asignarCores(Task tarea, int numPendientes, bool ht)
     {
         // Calcula el número de cores necesarios
         int coresNecesarios = ceil(((double)numPendientes) / instCore);
-        // cout << "Necesita " << ((double)numPendientes) / instCore << " cores" << endl;
 
         if (coresNecesarios > coresLibres)
         {
