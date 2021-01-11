@@ -25,7 +25,7 @@ public:
     int asignarCores(Task t, int numPendientes, bool ht);
 
     // Devuelve las tareas que se están ejecutando
-    vector<Task> getTareas();
+    set<Task> getTareas();
 
     // Devuelve si la plataforma ejecuta alguna tarea
     bool isOcupado();
@@ -61,6 +61,7 @@ public:
     bool isEjecutando(int idTarea);
 
     // Comprueba que se pueda ejecutar con HT la tarea t
+    // Devuelve el id del dispositivo donde se ejecutaría, -1 si no lo puede aplicar
     bool isHTAplicable(Task t, int numInstrucciones);
 
     // Devuelve la solución en las estructuras de salida

@@ -52,13 +52,13 @@ int PlatUsage::asignarCores(Task t, int numPendientes, bool ht)
 }
 
 // Devuelve las tareas que se están ejecutando
-vector<Task> PlatUsage::getTareas()
+set<Task> PlatUsage::getTareas()
 {
-    vector<Task> tareas;
+    set<Task> tareas;
     for (auto dev : dispositivos)
     {
-        vector<Task> devTareas = dev.getTareas();
-        tareas.insert(tareas.end(), devTareas.begin(), devTareas.end());
+        set<Task> devTareas = dev.getTareas();
+        tareas.insert(devTareas.begin(), devTareas.end());
     }
     return tareas;
 }
@@ -86,7 +86,7 @@ double PlatUsage::getTiempo(Task t)
 double PlatUsage::getTiempo()
 {
     double maxTiempo = 0.0;
-    vector<Task> tareasEjecutadas = getTareas();
+    set<Task> tareasEjecutadas = getTareas();
 
     for (auto tarea : tareasEjecutadas)
     {
@@ -146,13 +146,21 @@ void PlatUsage::asignarTareas(vector<Ejecucion> &tareasActuales, deque<vector<Ej
         int numPendientes = getInstRestantes(t, instEjecutadas[getId(t)]);
 
         // Añade a la pila la versión con HT
+        // int devHT;
         if (!ht && isHTAplicable(t, numPendientes))
         {
             tareaHT = t;
             vector<Ejecucion> combinacionHT = Ejecucion::getHTVersion(tareaHT, tareasActuales);
+
             permutaciones.push_front(combinacionHT);
             hermanosRestantes++;
             versionHT = true;
+        }
+
+        if (ht && !isHTAplicable(t, numPendientes))
+        {
+            // Se ejecuta normal
+            ht = false;
         }
 
         // Coge la tarea y actualiza las instrucciones pendientes
@@ -190,8 +198,6 @@ void PlatUsage::asignarTareas(vector<Ejecucion> &tareasActuales, deque<vector<Ej
             Ejecucion::remove(tareaHT, tareasPendientes);
         }
     }
-
-    // cout << "Capacidad restante: " << getCapacidad() << endl;
 }
 
 // Devuelve el número de instrucciones que aún puede ejecutar el dispositivo
@@ -243,14 +249,10 @@ bool PlatUsage::isEjecutando(Task t)
 // Devuelve si se ejecuta la tarea con identificador idTarea en la plataforma
 bool PlatUsage::isEjecutando(int idTarea)
 {
-    for (auto dev : dispositivos)
-    {
-        if (dev.isEjecutando(idTarea))
-        {
-            return true;
-        }
-    }
-    return false;
+    Task t;
+    t.id = idTarea;
+
+    return isEjecutando(t);
 }
 
 // Recorro los dispositivos que no lo tienen activado aún y compruebo si se podría activar para el numInstrucciones
@@ -272,7 +274,7 @@ void PlatUsage::getSolucion(map<int, vector<Device>> &ejecuciones, vector<Task> 
 {
     for (auto dev : dispositivos)
     {
-        vector<Task> tareas = dev.getTareas();
+        set<Task> tareas = dev.getTareas();
 
         for (auto t : tareas)
         {

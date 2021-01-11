@@ -22,7 +22,7 @@ public:
     static vector<Ejecucion> crearTareas(Task *tareas, int n_tasks);
 
     // Crea un vector de tareas para la simulación de su ejecución
-    static vector<Ejecucion> crearTareas(vector<Task> tareas);
+    static vector<Ejecucion> crearTareas(set<Task> tareas);
 
     // Devuelve una versión de tareas en la que la tarea t tiene activado HT
     static vector<Ejecucion> getHTVersion(Task t, vector<Ejecucion> tareas);

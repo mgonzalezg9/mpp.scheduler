@@ -23,7 +23,7 @@ vector<Ejecucion> Ejecucion::crearTareas(Task *tareas, int n_tasks)
     return ejecuciones;
 }
 
-vector<Ejecucion> Ejecucion::crearTareas(vector<Task> tareas)
+vector<Ejecucion> Ejecucion::crearTareas(set<Task> tareas)
 {
     vector<Ejecucion> resultado;
     for (auto t : tareas)

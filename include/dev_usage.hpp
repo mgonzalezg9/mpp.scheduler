@@ -35,7 +35,7 @@ public:
     int getIdDispositivo();
 
     // Devuelve las tareas que se están ejecutando
-    vector<Task> getTareas();
+    set<Task> getTareas();
 
     // Devuelve si el dispositivo ejecuta alguna tarea
     bool isOcupado();

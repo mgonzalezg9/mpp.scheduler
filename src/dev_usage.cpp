@@ -33,12 +33,12 @@ int DevUsage::getIdDispositivo()
     return getDevId(dispositivo);
 }
 
-vector<Task> DevUsage::getTareas()
+set<Task> DevUsage::getTareas()
 {
-    vector<Task> keys;
+    set<Task> keys;
     for (map<Task, int>::iterator it = instTarea.begin(); it != instTarea.end(); ++it)
     {
-        keys.push_back(it->first);
+        keys.insert(it->first);
     }
     return keys;
 }
@@ -228,7 +228,7 @@ int DevUsage::asignarCores(Task tarea, int numPendientes, bool ht)
             asignarTarea(tarea, instAsignadas);
             this->ht = true;
         }
-        return instAsignadas;
+        // return instAsignadas;
     }
     else
     {
@@ -260,7 +260,7 @@ void DevUsage::printInfo()
         cout << "\t*HT*" << endl;
     }
 
-    vector<Task> tareas = getTareas();
+    set<Task> tareas = getTareas();
     for (auto t : tareas)
     {
         cout << "\t\tT" << getId(t) << ": {(" << getCores(t) << ") => " << getInstruccionesEjecutadas(t) << "}" << endl;

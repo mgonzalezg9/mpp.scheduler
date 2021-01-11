@@ -2,7 +2,7 @@ GCC = g++
 GDB = gdb
 FLAGS = -O3 -std=c++11 -ggdb3 -Wall -lm -g
 MODULES = src/main.cpp src/task.cpp src/platform.cpp src/io.cpp src/sec.cpp src/dev_usage.cpp src/ejecucion.cpp src/plat_usage.cpp
-IN = 01
+IN = 02
 ARG_1 = input/$(IN)/platform_$(IN)
 ARG_2 = input/$(IN)/tasks_$(IN)
 SEC = ./sec
@@ -21,7 +21,7 @@ callgrind:
 debug:
 	$(GDB) -ex=r --args $(SEC) $(ARG_1) $(ARG_2)
 	
-test_sec:
+test_sec: sec
 	$(SEC) $(ARG_1) $(ARG_2)
 
 clean:
