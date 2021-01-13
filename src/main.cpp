@@ -49,7 +49,7 @@ int main(int argc, char **argv)
 
 #ifdef TIME
 	double tf = mseconds();
-	printf("\nTime = %.2lf seconds\n", (tf - ti) / 1000);
+	printf("\nTime = %.2lf miliseconds\n", (tf - ti));
 #endif
 
 #ifdef DEBUG
