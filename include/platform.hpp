@@ -1,6 +1,8 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
+#include "mpi.h"
+
 struct Device
 {
 	int id;
@@ -33,5 +35,6 @@ Device *getDevices(Platform *);
 Device getDevice(Platform *, int);
 int getComputationalCapacity(Platform *);
 double getConsumption(Platform *);
+void createDeviceType(MPI_Datatype *device_type);
 
 #endif

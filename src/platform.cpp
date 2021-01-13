@@ -67,3 +67,28 @@ double getConsumption(Platform *platform)
 	}
 	return acum;
 }
+
+void createDeviceType(MPI_Datatype *device_type)
+{
+	Device indata;
+	int numAttrs = 5;
+	int blocklen1[numAttrs] = {1, 1, 1, 1, 1};
+
+	MPI_Datatype typelist[numAttrs] = {MPI_INT, MPI_INT, MPI_INT, MPI_DOUBLE, MPI_INT};
+	MPI_Aint addresses[numAttrs];
+	MPI_Aint displacements[numAttrs];
+
+	MPI_Get_address(&indata, &addresses[0]);
+	MPI_Get_address(&(indata.inst_core), &addresses[1]);
+	MPI_Get_address(&(indata.n_cores), &addresses[2]);
+	MPI_Get_address(&(indata.consumption), &addresses[3]);
+	MPI_Get_address(&(indata.hyperthreading), &addresses[4]);
+
+	for (int i = 0; i < numAttrs; i++)
+	{
+		displacements[i] = addresses[i] - addresses[0];
+	}
+
+	MPI_Type_create_struct(numAttrs, blocklen1, displacements, typelist, device_type);
+	MPI_Type_commit(device_type);
+}
