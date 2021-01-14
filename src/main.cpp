@@ -83,6 +83,8 @@ int main(int argc, char **argv)
 			MPI_Bcast(&t.id, 1, MPI_INT, 0, MPI_COMM_WORLD);
 			MPI_Bcast(&t.n_inst, 1, MPI_INT, 0, MPI_COMM_WORLD);
 			MPI_Bcast(&t.n_deps, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+			t.dep_tasks = (int *)malloc(t.n_deps * sizeof(int));
 			MPI_Bcast(t.dep_tasks, t.n_deps, MPI_INT, 0, MPI_COMM_WORLD);
 
 			tasks[i] = t;
@@ -112,6 +114,23 @@ int main(int argc, char **argv)
 		time = energy = 0.0;
 	}
 
+	// if (rank == 2)
+	// {
+	// 	for (int i = 0; i < n_tasks; i++)
+	// 	{
+	// 		Task t = tasks[i];
+	// 		cout << "T" << t.id << ": NI=" << t.n_inst << endl;
+	// 	}
+
+	// 	cout << "La plataforma tiene " << platform->n_devices << " dispositivos" << endl;
+
+	// 	for (int i = 0; i < platform->n_devices; i++)
+	// 	{
+	// 		Device d = platform->devices[i];
+	// 		cout << "D" << d.id << ": " << d.n_cores << " cores con " << d.inst_core << " cada uno" << endl;
+	// 	}
+	// }
+
 	// get_solution(tasks, n_tasks, platform, sorted_tasks, selected_dev, time, energy, rank, size);
 
 	MPI_Barrier(MPI_COMM_WORLD);
@@ -139,13 +158,12 @@ int main(int argc, char **argv)
 	free(platform->devices);
 	free(platform);
 
-	for (int i = 0; i < n_tasks; i++)
-	{
-		free(selected_dev[i].devices);
-	}
-
 	if (rank == 0)
 	{
+		for (int i = 0; i < n_tasks; i++)
+		{
+			free(selected_dev[i].devices);
+		}
 		free(selected_dev);
 		free(sorted_tasks);
 	}

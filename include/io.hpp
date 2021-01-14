@@ -8,4 +8,4 @@
 Task *load_tasks(const char *, int *);
 Platform *load_platform(const char *);
 void print_solution(Task *, int, Platform *, double, double);
-void get_solution(Task *, int, Platform *, Task *, Platform *, double &, double &);
+void get_solution(Task *, int, Platform *, Task *, Platform *, double &, double &, int, int);

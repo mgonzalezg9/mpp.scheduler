@@ -3,7 +3,7 @@ GCC = g++
 GDB = gdb
 FLAGS = -O3 -std=c++11 -ggdb3 -Wall -lm -g -fpermissive
 MODULES = src/main.cpp src/task.cpp src/platform.cpp src/io.cpp src/dev_usage.cpp src/ejecucion.cpp src/plat_usage.cpp
-NUM_PROC = 1
+NUM_PROC = 2
 IN = 01
 ARG_1 = input/$(IN)/platform_$(IN)
 ARG_2 = input/$(IN)/tasks_$(IN)
@@ -11,7 +11,7 @@ SEC = ./sec
 MPI = ./mpi
 
 mpi: $(MODULES) src/mpi.cpp
-	$(MPICC) $(FLAGS) $(MODULES) src/mpi.cpp -o $(MPI) -DTIME -DDEBUG
+	$(MPICC) $(FLAGS) $(MODULES) src/mpi.cpp -o $(MPI) -DTIME
 #	Add -DDEBUG to display the solution.
 
 sec: $(MODULES) src/sec.cpp
