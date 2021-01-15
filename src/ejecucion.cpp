@@ -10,6 +10,16 @@ set<int> Ejecucion::getIds(vector<Ejecucion> tareas)
     return ids;
 }
 
+vector<int> Ejecucion::getListIds(vector<Ejecucion> tareas)
+{
+    vector<int> ids;
+    for (auto ejecucion : tareas)
+    {
+        ids.push_back(getId(ejecucion.getTarea()));
+    }
+    return ids;
+}
+
 vector<Ejecucion> Ejecucion::crearTareas(Task *tareas, int n_tasks)
 {
     vector<Ejecucion> ejecuciones;
@@ -31,6 +41,21 @@ vector<Ejecucion> Ejecucion::crearTareas(set<Task> tareas)
         Ejecucion ej(t, false);
         resultado.push_back(ej);
     }
+    return resultado;
+}
+
+vector<Ejecucion> Ejecucion::crearTareas(vector<int> ids, Task *sortedTasks)
+{
+    vector<Ejecucion> resultado;
+
+    for (auto id : ids)
+    {
+        Task t = sortedTasks[id];
+        Ejecucion ej(t, false);
+
+        resultado.push_back(ej);
+    }
+
     return resultado;
 }
 

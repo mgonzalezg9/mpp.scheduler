@@ -11,6 +11,7 @@
 #include "../include/plat_usage.hpp"
 
 #define NIVEL_INEXPLORADO 0
+#define TAG 99
 
 using namespace std;
 
@@ -220,7 +221,7 @@ void retroceder(int &nivel, vector<PlatUsage> &s, double &tact, double &eact, ve
     nivel--;
 }
 
-void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tasks, Platform *selected_devs, double &time, double &energy, int rank, int size)
+void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tasks, Platform *selected_devs, double &time, double &energy, MPI_Datatype device_type, int rank, int size)
 {
     // Inicialización
     int nivel = 1;
@@ -242,10 +243,109 @@ void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tas
     hermanosRestantes[1] = NIVEL_INEXPLORADO;
 
     deque<vector<Ejecucion>> permutaciones;
-
+    vector<int> instEjecutadas(n_tasks, 0);
     vector<Ejecucion> tareasPendientes = Ejecucion::crearTareas(tasks, n_tasks);
 
-    vector<int> instEjecutadas(n_tasks, 0);
+    // Reparto del primer nivel entre los procesos
+    int trozo, resto;
+    int numProcesos = size;
+    if (rank == 0)
+    {
+        // Genera el primer nivel para cada uno de los hilos
+        vector<vector<Ejecucion>> hermanosPrimerNivel = getPermutaciones(tareasPendientes, inicio);
+        int numHermanos = hermanosPrimerNivel.size();
+
+        // Avisa a cada proceso de los hermanos que le van a llegar
+        trozo = numHermanos / size;
+        resto = numHermanos % size;
+        MPI_Bcast(&trozo, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Bcast(&resto, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+        // Si hay más procesos que nodos trabajaran solo aquellos procesos con nodo
+        if (trozo == 0)
+        {
+            numProcesos = resto;
+        }
+        else
+        {
+            numProcesos = size;
+        }
+
+        // Master se queda con su parte
+        permutaciones.insert(permutaciones.end(), hermanosPrimerNivel.begin(), hermanosPrimerNivel.begin() + trozo);
+
+        // Manda a cada proceso las permutaciones que le corresponden
+        for (int p = 1; p < size; p++)
+        {
+            for (int i = 0; i < trozo; i++)
+            {
+                vector<int> idTareas = Ejecucion::getListIds(hermanosPrimerNivel[p * trozo + i]);
+
+                int numIds = idTareas.size();
+                MPI_Send(&numIds, 1, MPI_INT, p, TAG, MPI_COMM_WORLD);
+
+                MPI_Send(&idTareas[0], numIds, MPI_INT, p, TAG, MPI_COMM_WORLD);
+            }
+        }
+
+        // Distribuye el resto entre los procesos
+        if (resto > 0)
+        {
+            // Para el master
+            permutaciones.push_back(hermanosPrimerNivel[(size - 1) * trozo]);
+
+            // Al resto de procesos
+            int p = 1;
+            for (int i = 1; i < resto; i++)
+            {
+                vector<int> idTareas = Ejecucion::getListIds(hermanosPrimerNivel[(size - 1) * trozo + i]);
+
+                int numIds = idTareas.size();
+                MPI_Send(&numIds, 1, MPI_INT, p, TAG, MPI_COMM_WORLD);
+
+                MPI_Send(&idTareas[0], numIds, MPI_INT, p, TAG, MPI_COMM_WORLD);
+                p++;
+            }
+
+            // El trozo de master ahora es mayor
+            trozo++;
+        }
+    }
+    else
+    {
+        MPI_Bcast(&trozo, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Bcast(&resto, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+        // Calcula si le toca recibir resto
+        if (resto > rank)
+        {
+            trozo++;
+        }
+
+        for (int i = 0; i < trozo; i++)
+        {
+            int numIds;
+            MPI_Recv(&numIds, 1, MPI_INT, 0, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+            vector<int> idsPermutacion(numIds);
+            MPI_Recv(&idsPermutacion[0], numIds, MPI_INT, 0, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            // for (int id : idsPermutacion)
+            // {
+            //     cout << "T" << id << " ";
+            // }
+            // cout << endl;
+            permutaciones.push_back(Ejecucion::crearTareas(idsPermutacion, tasks));
+        }
+    }
+
+    // Actualiza las variables auxiliares
+    hermanosRestantes[nivel] = trozo;
+
+    if (hermanosRestantes[nivel] == 0)
+    {
+        // No se le ha asignado carga al proceso, por lo que termina
+        return;
+    }
 
     // Algoritmo
     do
@@ -283,8 +383,111 @@ void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tas
         }
     } while (nivel > 0);
 
-    // Reconstrucción de la solución
-    time = toa;
-    energy = eoa;
-    formatSolucion(soa, sorted_tasks, n_tasks, selected_devs, platform->n_devices);
+    // El master recopila las soluciones para quedarse con la mejor
+    cout << "P" << rank << ": (" << toa << ", " << eoa << ")" << endl;
+
+    // Master recoge la mejor solución
+    // int tamPaquete = 2 * sizeof(double);
+    // char *paquete = (char *)malloc(tamPaquete);
+
+    if (rank == 0)
+    {
+        int procesoSolucion = 0;
+        time = toa;
+        energy = eoa;
+
+        for (int i = 1; i < numProcesos; i++)
+        {
+            double t, e;
+            MPI_Status status;
+
+            // MPI_Recv(paquete, tamPaquete, MPI_PACKED, i, TAG, MPI_COMM_WORLD, &status);
+
+            // int position = 0;
+            // MPI_Unpack(paquete, tamPaquete, &position, &t, 1, MPI_DOUBLE, MPI_COMM_WORLD);
+            // MPI_Unpack(paquete, tamPaquete, &position, &e, 1, MPI_DOUBLE, MPI_COMM_WORLD);
+            MPI_Recv(&t, 1, MPI_DOUBLE, i, TAG, MPI_COMM_WORLD, &status);
+            MPI_Recv(&e, 1, MPI_DOUBLE, i, TAG, MPI_COMM_WORLD, &status);
+            // cout << "Recibí t=" << t << " y e=" << e << endl;
+
+            // Comprueba si es mejor que la solución de master
+            if (t <= time && e <= energy)
+            {
+                procesoSolucion = status.MPI_SOURCE;
+                time = t;
+                energy = e;
+            }
+        }
+        // cout << "procesoSolucion: " << procesoSolucion << endl;
+
+        // Se indica a todos los procesos que pueden finalizar menos al que tiene la solución
+        for (int i = 1; i < numProcesos; i++)
+        {
+            int solucion = 0;
+            if (i == procesoSolucion)
+            {
+                solucion = 1;
+            }
+
+            MPI_Send(&solucion, 1, MPI_INT, i, TAG, MPI_COMM_WORLD);
+        }
+
+        if (procesoSolucion != 0)
+        {
+            // Se reciben los id de las tareas en el orden de ejecución
+            vector<int> idTareas(n_tasks);
+            MPI_Recv(&idTareas[0], n_tasks, MPI_INT, procesoSolucion, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            int i = 0;
+            for (auto id : idTareas)
+            {
+                sorted_tasks[i].id = id;
+                i++;
+            }
+
+            // Se reciben los array con los dispositivos
+            for (int i = 0; i < n_tasks; i++)
+            {
+                MPI_Recv(&selected_devs[i].n_devices, 1, MPI_INT, procesoSolucion, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                MPI_Recv(selected_devs[i].devices, selected_devs[i].n_devices, device_type, procesoSolucion, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            }
+        }
+        else
+        {
+            formatSolucion(soa, sorted_tasks, n_tasks, selected_devs, platform->n_devices);
+        }
+    }
+    else
+    {
+        // Empaquetado de los datos
+        // cout << "Envío t=" << toa << " y e=" << eoa << endl;
+        MPI_Send(&toa, 1, MPI_DOUBLE, 0, TAG, MPI_COMM_WORLD);
+        MPI_Send(&eoa, 1, MPI_DOUBLE, 0, TAG, MPI_COMM_WORLD);
+        // int position = 0;
+        // MPI_Pack(&toa, 1, MPI_DOUBLE, paquete, tamPaquete, &position, MPI_COMM_WORLD);
+        // MPI_Pack(&eoa, 1, MPI_DOUBLE, paquete, tamPaquete, &position, MPI_COMM_WORLD);
+        // MPI_Send(&paquete, tamPaquete, MPI_PACKED, 0, TAG, MPI_COMM_WORLD);
+
+        // Comprueba si tiene la solución o no
+        int solucion;
+        MPI_Recv(&solucion, 1, MPI_INT, 0, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+        if (solucion)
+        {
+            formatSolucion(soa, sorted_tasks, n_tasks, selected_devs, platform->n_devices);
+
+            vector<int> idTareas;
+            for (int i = 0; i < n_tasks; i++)
+            {
+                idTareas.push_back(sorted_tasks[i].id);
+            }
+
+            MPI_Send(&idTareas[0], n_tasks, MPI_INT, 0, TAG, MPI_COMM_WORLD);
+
+            for (int i = 0; i < n_tasks; i++)
+            {
+                MPI_Send(&selected_devs[i].n_devices, 1, MPI_INT, 0, TAG, MPI_COMM_WORLD);
+                MPI_Send(selected_devs[i].devices, selected_devs[i].n_devices, device_type, 0, TAG, MPI_COMM_WORLD);
+            }
+        }
+    }
 }

@@ -29,77 +29,23 @@ int main(int argc, char **argv)
 	createDeviceType(&device_type);
 
 	int n_tasks, n_devs;
-	Task *tasks, *sorted_tasks;
-	tasks = sorted_tasks = NULL;
-	Platform *platform, *selected_dev;
-	platform = selected_dev = NULL;
-	if (rank == 0)
+
+	// Read Input Data
+	Task *tasks = load_tasks(argv[2], &n_tasks);
+	Platform *platform = load_platform(argv[1]);
+	n_devs = getNumDevices(platform);
+
+	// Array for Store the Solution
+	Task *sorted_tasks = (Task *)malloc(n_tasks * sizeof(Task));
+	assert(sorted_tasks);
+
+	// Each position corresponds to the sub-platform (set of computing units) used for each task
+	Platform *selected_dev = (Platform *)malloc(n_tasks * sizeof(Platform));
+	assert(selected_dev);
+
+	for (int i = 0; i < n_tasks; i++)
 	{
-		// Read Input Data
-		tasks = load_tasks(argv[2], &n_tasks);
-		platform = load_platform(argv[1]);
-		n_devs = getNumDevices(platform);
-
-		// Envío de las tareas
-		MPI_Bcast(&n_tasks, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-		for (int i = 0; i < n_tasks; i++)
-		{
-			MPI_Bcast(&tasks[i].id, 1, MPI_INT, 0, MPI_COMM_WORLD);
-			MPI_Bcast(&tasks[i].n_inst, 1, MPI_INT, 0, MPI_COMM_WORLD);
-			MPI_Bcast(&tasks[i].n_deps, 1, MPI_INT, 0, MPI_COMM_WORLD);
-			MPI_Bcast(tasks[i].dep_tasks, tasks[i].n_deps, MPI_INT, 0, MPI_COMM_WORLD);
-		}
-
-		// Envío de la plataforma
-		MPI_Bcast(&n_devs, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-		Device *devices = getDevices(platform);
-		MPI_Bcast(devices, n_devs, device_type, 0, MPI_COMM_WORLD);
-
-		// Array for Store the Solution
-		sorted_tasks = (Task *)malloc(n_tasks * sizeof(Task));
-		assert(sorted_tasks);
-
-		// Each position corresponds to the sub-platform (set of computing units) used for each task
-		selected_dev = (Platform *)malloc(n_tasks * sizeof(Platform));
-		assert(selected_dev);
-
-		for (int i = 0; i < n_tasks; i++)
-		{
-			selected_dev[i].devices = (Device *)malloc((2 * n_devs) * sizeof(Device));
-		}
-	}
-	else
-	{
-		// Recepción de las tareas
-		MPI_Bcast(&n_tasks, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-		tasks = (Task *)malloc(n_tasks * sizeof(Task));
-		for (int i = 0; i < n_tasks; i++)
-		{
-			Task t;
-
-			MPI_Bcast(&t.id, 1, MPI_INT, 0, MPI_COMM_WORLD);
-			MPI_Bcast(&t.n_inst, 1, MPI_INT, 0, MPI_COMM_WORLD);
-			MPI_Bcast(&t.n_deps, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-			t.dep_tasks = (int *)malloc(t.n_deps * sizeof(int));
-			MPI_Bcast(t.dep_tasks, t.n_deps, MPI_INT, 0, MPI_COMM_WORLD);
-
-			tasks[i] = t;
-		}
-
-		// Recepción de la plataforma
-		platform = (Platform *)malloc(sizeof(Platform));
-
-		MPI_Bcast(&n_devs, 1, MPI_INT, 0, MPI_COMM_WORLD);
-		platform->n_devices = n_devs;
-		assert(platform);
-
-		platform->devices = (Device *)malloc(n_devs * sizeof(Device));
-		assert(platform->devices);
-		MPI_Bcast(platform->devices, n_devs, device_type, 0, MPI_COMM_WORLD);
+		selected_dev[i].devices = (Device *)malloc((2 * n_devs) * sizeof(Device));
 	}
 
 	double ti, tf;
@@ -114,7 +60,7 @@ int main(int argc, char **argv)
 		time = energy = 0.0;
 	}
 
-	// if (rank == 2)
+	// if (rank == 1)
 	// {
 	// 	for (int i = 0; i < n_tasks; i++)
 	// 	{
@@ -131,7 +77,7 @@ int main(int argc, char **argv)
 	// 	}
 	// }
 
-	// get_solution(tasks, n_tasks, platform, sorted_tasks, selected_dev, time, energy, rank, size);
+	get_solution(tasks, n_tasks, platform, sorted_tasks, selected_dev, time, energy, device_type, rank, size);
 
 	MPI_Barrier(MPI_COMM_WORLD);
 
