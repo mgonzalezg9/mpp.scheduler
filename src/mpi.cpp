@@ -249,26 +249,28 @@ void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tas
     // Reparto del primer nivel entre los procesos
     int trozo, resto;
     int numProcesos = size;
+    int tamDivision = sizeof(int) * 2;
+    char *workshare = (char *)malloc(tamDivision);
+
     if (rank == 0)
     {
-        // Genera el primer nivel para cada uno de los hilos
+        // Genera el primer nivel para cada uno de los procesos
         vector<vector<Ejecucion>> hermanosPrimerNivel = getPermutaciones(tareasPendientes, inicio);
         int numHermanos = hermanosPrimerNivel.size();
 
         // Avisa a cada proceso de los hermanos que le van a llegar
         trozo = numHermanos / size;
         resto = numHermanos % size;
-        MPI_Bcast(&trozo, 1, MPI_INT, 0, MPI_COMM_WORLD);
-        MPI_Bcast(&resto, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+        int position = 0;
+        MPI_Pack(&trozo, 1, MPI_INT, workshare, tamDivision, &position, MPI_COMM_WORLD);
+        MPI_Pack(&resto, 1, MPI_INT, workshare, tamDivision, &position, MPI_COMM_WORLD);
+        MPI_Bcast(workshare, position, MPI_PACKED, 0, MPI_COMM_WORLD);
 
         // Si hay más procesos que nodos trabajaran solo aquellos procesos con nodo
         if (trozo == 0)
         {
             numProcesos = resto;
-        }
-        else
-        {
-            numProcesos = size;
         }
 
         // Master se queda con su parte
@@ -313,8 +315,11 @@ void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tas
     }
     else
     {
-        MPI_Bcast(&trozo, 1, MPI_INT, 0, MPI_COMM_WORLD);
-        MPI_Bcast(&resto, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Bcast(workshare, tamDivision, MPI_PACKED, 0, MPI_COMM_WORLD);
+
+        int position = 0;
+        MPI_Unpack(workshare, tamDivision, &position, &trozo, 1, MPI_INT, MPI_COMM_WORLD);
+        MPI_Unpack(workshare, tamDivision, &position, &resto, 1, MPI_INT, MPI_COMM_WORLD);
 
         // Calcula si le toca recibir resto
         if (resto > rank)
@@ -383,12 +388,11 @@ void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tas
         }
     } while (nivel > 0);
 
-    // El master recopila las soluciones para quedarse con la mejor
-    cout << "P" << rank << ": (" << toa << ", " << eoa << ")" << endl;
+    // cout << "P" << rank << ": (" << toa << ", " << eoa << ")" << endl;
 
     // Master recoge la mejor solución
-    // int tamPaquete = 2 * sizeof(double);
-    // char *paquete = (char *)malloc(tamPaquete);
+    int tamPaquete = 2 * sizeof(double);
+    char *paquete = (char *)malloc(tamPaquete);
 
     if (rank == 0)
     {
@@ -401,14 +405,11 @@ void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tas
             double t, e;
             MPI_Status status;
 
-            // MPI_Recv(paquete, tamPaquete, MPI_PACKED, i, TAG, MPI_COMM_WORLD, &status);
+            int position = 0;
+            MPI_Recv(paquete, tamPaquete, MPI_PACKED, MPI_ANY_SOURCE, TAG, MPI_COMM_WORLD, &status);
 
-            // int position = 0;
-            // MPI_Unpack(paquete, tamPaquete, &position, &t, 1, MPI_DOUBLE, MPI_COMM_WORLD);
-            // MPI_Unpack(paquete, tamPaquete, &position, &e, 1, MPI_DOUBLE, MPI_COMM_WORLD);
-            MPI_Recv(&t, 1, MPI_DOUBLE, i, TAG, MPI_COMM_WORLD, &status);
-            MPI_Recv(&e, 1, MPI_DOUBLE, i, TAG, MPI_COMM_WORLD, &status);
-            // cout << "Recibí t=" << t << " y e=" << e << endl;
+            MPI_Unpack(paquete, tamPaquete, &position, &t, 1, MPI_DOUBLE, MPI_COMM_WORLD);
+            MPI_Unpack(paquete, tamPaquete, &position, &e, 1, MPI_DOUBLE, MPI_COMM_WORLD);
 
             // Comprueba si es mejor que la solución de master
             if (t <= time && e <= energy)
@@ -418,7 +419,6 @@ void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tas
                 energy = e;
             }
         }
-        // cout << "procesoSolucion: " << procesoSolucion << endl;
 
         // Se indica a todos los procesos que pueden finalizar menos al que tiene la solución
         for (int i = 1; i < numProcesos; i++)
@@ -459,13 +459,10 @@ void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tas
     else
     {
         // Empaquetado de los datos
-        // cout << "Envío t=" << toa << " y e=" << eoa << endl;
-        MPI_Send(&toa, 1, MPI_DOUBLE, 0, TAG, MPI_COMM_WORLD);
-        MPI_Send(&eoa, 1, MPI_DOUBLE, 0, TAG, MPI_COMM_WORLD);
-        // int position = 0;
-        // MPI_Pack(&toa, 1, MPI_DOUBLE, paquete, tamPaquete, &position, MPI_COMM_WORLD);
-        // MPI_Pack(&eoa, 1, MPI_DOUBLE, paquete, tamPaquete, &position, MPI_COMM_WORLD);
-        // MPI_Send(&paquete, tamPaquete, MPI_PACKED, 0, TAG, MPI_COMM_WORLD);
+        int position = 0;
+        MPI_Pack(&toa, 1, MPI_DOUBLE, paquete, tamPaquete, &position, MPI_COMM_WORLD);
+        MPI_Pack(&eoa, 1, MPI_DOUBLE, paquete, tamPaquete, &position, MPI_COMM_WORLD);
+        MPI_Send(paquete, position, MPI_PACKED, 0, TAG, MPI_COMM_WORLD);
 
         // Comprueba si tiene la solución o no
         int solucion;
