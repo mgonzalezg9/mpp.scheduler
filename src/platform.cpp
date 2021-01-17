@@ -72,9 +72,9 @@ void createDeviceType(MPI_Datatype *device_type)
 {
 	Device indata;
 	int numAttrs = 5;
-	int blocklen1[numAttrs] = {1, 1, 1, 1, 1};
+	int blocklen1[5] = {1, 1, 1, 1, 1};
 
-	MPI_Datatype typelist[numAttrs] = {MPI_INT, MPI_INT, MPI_INT, MPI_DOUBLE, MPI_INT};
+	MPI_Datatype typelist[5] = {MPI_INT, MPI_INT, MPI_INT, MPI_DOUBLE, MPI_INT};
 	MPI_Aint addresses[numAttrs];
 	MPI_Aint displacements[numAttrs];
 
