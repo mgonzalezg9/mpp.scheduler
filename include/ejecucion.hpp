@@ -24,8 +24,8 @@ public:
     // Crea un vector de tareas para la simulación de su ejecución
     static vector<Ejecucion> crearTareas(set<Task> tareas);
 
-    // Devuelve una versión de tareas en la que la tarea t tiene activado HT
-    static vector<Ejecucion> getHTVersion(Task t, vector<Ejecucion> tareas);
+    // Devuelve una versión de tareas en la que la tarea t no tiene la opción de usar HT
+    static vector<Ejecucion> getNoHTVersion(Task t, vector<Ejecucion> tareas);
 
     // Borra la tarea t del vector de tareas
     static bool remove(Task t, vector<Ejecucion> &tareas);

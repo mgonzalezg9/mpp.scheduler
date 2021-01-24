@@ -16,7 +16,7 @@ vector<Ejecucion> Ejecucion::crearTareas(Task *tareas, int n_tasks)
 
     for (int i = 0; i < n_tasks; i++)
     {
-        Ejecucion ej(tareas[i], false);
+        Ejecucion ej(tareas[i], true);
         ejecuciones.push_back(ej);
     }
 
@@ -28,23 +28,26 @@ vector<Ejecucion> Ejecucion::crearTareas(set<Task> tareas)
     vector<Ejecucion> resultado;
     for (auto t : tareas)
     {
-        Ejecucion ej(t, false);
+        Ejecucion ej(t, true);
         resultado.push_back(ej);
     }
     return resultado;
 }
 
-vector<Ejecucion> Ejecucion::getHTVersion(Task t, vector<Ejecucion> tareas)
+vector<Ejecucion> Ejecucion::getNoHTVersion(Task t, vector<Ejecucion> tareas)
 {
     vector<Ejecucion> htVersion;
-    Ejecucion ej(t, true);
-    htVersion.push_back(ej);
 
-    for (vector<Ejecucion>::iterator it = tareas.begin(); it != tareas.end(); ++it)
+    for (auto ejecucion : tareas)
     {
-        if (it->getTarea() != t)
+        if (ejecucion.getTarea() == t)
         {
-            htVersion.push_back(*it);
+            Ejecucion ej(t, false);
+            htVersion.push_back(ej);
+        }
+        else
+        {
+            htVersion.push_back(ejecucion);
         }
     }
 

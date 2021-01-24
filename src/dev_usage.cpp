@@ -170,7 +170,7 @@ void DevUsage::deshacerEjecucion(vector<int> &instruccionesEjecutadas, vector<Ej
 
         if (pendientes.find(idTarea) == pendientes.end())
         {
-            Ejecucion ej(tarea, false);
+            Ejecucion ej(tarea, true);
             tareasPendientes.push_back(ej);
         }
     }
@@ -197,7 +197,7 @@ bool DevUsage::isEjecutando(int idTarea)
 // Devuelve si el dispositivo permitiria aplicar HT para el numero de instrucciones
 bool DevUsage::isHTAplicable(int numInstrucciones)
 {
-    return !isHTActivado() && numInstrucciones == getCapacidadHT();
+    return !isHTActivado() && numInstrucciones == getCapacidadHT() && !isOcupado();
 }
 
 // Asigna la mayor cantidad posible de cores a la tarea para que ejecute las instrucciones que tiene pendientes
@@ -211,13 +211,12 @@ int DevUsage::asignarCores(Task tarea, int numPendientes, bool ht)
 
     if (ht)
     {
-        if (isHTAplicable(numPendientes) && !isOcupado())
+        if (isHTAplicable(numPendientes))
         {
             instAsignadas = numPendientes;
             asignarTarea(tarea, instAsignadas);
             this->ht = true;
         }
-        // return instAsignadas;
     }
     else
     {

@@ -27,6 +27,9 @@ public:
     // Devuelve las tareas que se están ejecutando
     set<Task> getTareas();
 
+    // Devuelve las tareas que se están ejecutando
+    int getNumTareas();
+
     // Devuelve si la plataforma ejecuta alguna tarea
     bool isOcupado();
 
@@ -60,6 +63,9 @@ public:
     // Comprueba que se pueda ejecutar con HT la tarea t
     // Devuelve el id del dispositivo donde se ejecutaría, -1 si no lo puede aplicar
     bool isHTAplicable(Task t, int numInstrucciones);
+
+    // Devuelve si está activado HT en algún dispositivo
+    bool isHTActivado();
 
     // Devuelve la solución en las estructuras de salida
     void getSolucion(map<int, vector<Device>> &ejecuciones, vector<Task> &orden);

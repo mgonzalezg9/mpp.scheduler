@@ -85,7 +85,7 @@ vector<vector<Ejecucion>> getPermutaciones(vector<Ejecucion> tareas, PlatUsage n
     // cout << "Tareas sin dependencias" << endl;
     // for (auto ej : tareas)
     // {
-    //     cout << "T" << getId(ej.getTarea()) << (ej.isHT() ? "*" : "") << " ";
+    //     cout << "T" << getId(ej.getTarea()) << (ej.isHT() ? "+" : "-") << " ";
     // }
     // cout << endl;
 
@@ -162,11 +162,7 @@ void generar(int nivel, vector<PlatUsage> &s, vector<int> &hermanosRestantes, ve
     if (hermanosRestantes[nivel] == NIVEL_INEXPLORADO)
     {
         vector<vector<Ejecucion>> nuevas = getPermutaciones(tareasPendientes, nivelAnterior);
-
-        for (auto permutacion : nuevas)
-        {
-            permutaciones.push_front(permutacion);
-        }
+        permutaciones.insert(permutaciones.begin(), nuevas.begin(), nuevas.end());
         hermanosRestantes[nivel] = nuevas.size();
     }
 
@@ -176,7 +172,7 @@ void generar(int nivel, vector<PlatUsage> &s, vector<int> &hermanosRestantes, ve
 
     // for (auto ej : secuencia)
     // {
-    //     cout << "T" << getId(ej.getTarea()) << (ej.isHT() ? "*" : "") << " ";
+    //     cout << "T" << getId(ej.getTarea()) << (ej.isHT() ? "+" : "-") << " ";
     // }
     // cout << endl;
 
@@ -227,8 +223,7 @@ void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tas
 
     vector<PlatUsage> s(2);
     PlatUsage inicio(platform);
-    s[0] = inicio;
-    s[1] = inicio;
+    s[nivel] = inicio;
 
     double tact, eact;
     tact = eact = 0.0;
@@ -238,8 +233,7 @@ void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tas
     vector<PlatUsage> soa;
 
     vector<int> hermanosRestantes(2);
-    hermanosRestantes[0] = NIVEL_INEXPLORADO;
-    hermanosRestantes[1] = NIVEL_INEXPLORADO;
+    hermanosRestantes[nivel] = NIVEL_INEXPLORADO;
 
     deque<vector<Ejecucion>> permutaciones;
 
@@ -256,11 +250,16 @@ void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tas
         // s[nivel].printInfo();
         // cout << "--------------------------------" << endl;
 
-        if (solucion(tareasPendientes) && tact <= toa && eact <= eoa)
+        if (solucion(tareasPendientes))
         {
-            toa = tact;
-            eoa = eact;
-            soa = s;
+            if (tact <= toa && eact <= eoa)
+            {
+                toa = tact;
+                eoa = eact;
+                soa = s;
+            }
+
+            cout << "----------SOL (t = " << tact << ", e = " << eact << ")----------------------" << endl;
         }
 
         if (criterio(tareasPendientes))

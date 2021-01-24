@@ -35,7 +35,7 @@ int PlatUsage::asignarCores(Task t, int numPendientes, bool ht)
         ejecutadasTotal += numEjecutadas;
         numPendientes -= numEjecutadas;
 
-        if ((ht && numEjecutadas > 0) || numPendientes == 0)
+        if (numPendientes == 0)
         {
             // No tengo más instrucciones para ejecutar en otros dispositivos
             break;
@@ -55,6 +55,17 @@ set<Task> PlatUsage::getTareas()
         tareas.insert(devTareas.begin(), devTareas.end());
     }
     return tareas;
+}
+
+// Devuelve las tareas que se están ejecutando
+int PlatUsage::getNumTareas()
+{
+    int numTareas = 0;
+    for (auto dev : dispositivos)
+    {
+        numTareas += dev.getTareas().size();
+    }
+    return numTareas;
 }
 
 // Devuelve si la plataforma ejecuta alguna tarea
@@ -108,10 +119,6 @@ double PlatUsage::getEnergia()
 // Asigna una tarea para su ejecución en el dispositivo
 void PlatUsage::asignarTareas(vector<Ejecucion> &tareasActuales, deque<vector<Ejecucion>> &permutaciones, vector<int> &instEjecutadas, vector<Ejecucion> &tareasPendientes, int &hermanosRestantes)
 {
-    int numAsignadas = 0;
-    bool versionHT = false;
-    Task tareaHT;
-
     for (int i = 0; i < (int)tareasActuales.size() && getCapacidad() > 0; i++)
     {
         Task t = tareasActuales[i].getTarea();
@@ -119,19 +126,15 @@ void PlatUsage::asignarTareas(vector<Ejecucion> &tareasActuales, deque<vector<Ej
         int numPendientes = getInstRestantes(t, instEjecutadas[getId(t)]);
 
         // Añade a la pila la versión con HT
-        if (!ht && isHTAplicable(t, numPendientes))
+        if (ht && isHTAplicable(t, numPendientes))
         {
-            tareaHT = t;
-            vector<Ejecucion> combinacionHT = Ejecucion::getHTVersion(tareaHT, tareasActuales);
-
-            permutaciones.push_front(combinacionHT);
+            vector<Ejecucion> combinacionSinHT = Ejecucion::getNoHTVersion(t, tareasActuales);
+            permutaciones.push_front(combinacionSinHT);
             hermanosRestantes++;
-            versionHT = true;
         }
-
-        if (ht && !isHTAplicable(t, numPendientes))
+        else
         {
-            // Se ejecuta normal
+            // No se puede ejecutar con HT
             ht = false;
         }
 
@@ -143,31 +146,13 @@ void PlatUsage::asignarTareas(vector<Ejecucion> &tareasActuales, deque<vector<Ej
         {
             Ejecucion::remove(t, tareasPendientes);
         }
-
-        if (numEjecutadas > 0)
-        {
-            numAsignadas++;
-        }
     }
 
-    if (versionHT && numAsignadas == 1)
+    // Se prueba solo con HT al tratarse de una unica tarea
+    if (isHTActivado() && getNumTareas() == 1)
     {
-        // Borra la de HT, explorando solo esa posibilidad
-        vector<Ejecucion> secuenciaHT = permutaciones.front();
         permutaciones.pop_front();
         hermanosRestantes--;
-
-        // Deshace los cambios de la version sin HT
-        deshacerEjecucion(instEjecutadas, tareasPendientes);
-
-        int numPendientes = getInstRestantes(tareaHT, instEjecutadas[getId(tareaHT)]);
-        int numEjecutadas = asignarCores(tareaHT, numPendientes, true);
-        instEjecutadas[getId(tareaHT)] += numEjecutadas;
-
-        if (isFinalizada(tareaHT, instEjecutadas[getId(tareaHT)]))
-        {
-            Ejecucion::remove(tareaHT, tareasPendientes);
-        }
     }
 }
 
@@ -237,6 +222,19 @@ bool PlatUsage::isHTAplicable(Task t, int numInstrucciones)
         }
     }
 
+    return false;
+}
+
+// Devuelve si está activado HT en algún dispositivo
+bool PlatUsage::isHTActivado()
+{
+    for (auto dev : dispositivos)
+    {
+        if (dev.isHTActivado())
+        {
+            return true;
+        }
+    }
     return false;
 }
 
