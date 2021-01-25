@@ -1,4 +1,5 @@
 sec
+mpi
+omp
 .vscode/*
 callgrind.out.*
-omp

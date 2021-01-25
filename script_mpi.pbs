@@ -2,12 +2,13 @@
 
 #PBS -V
 #PBS -q batch
-#PBS -N tiburon_martillo
+#PBS -N tiburon_mako
 #PBS -l walltime=00:10:00
-#PBS -l nodes=saturno:ppn=24
+#PBS -l nodes=marte:ppn=2+mercurio:ppn=2
 
 source /etc/profile.d/modules.sh
+module load openmpi
 cd $PBS_O_WORKDIR
 
-make sec
-make test_sec
+make mpi
+make test_mpi
