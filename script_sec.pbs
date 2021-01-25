@@ -2,7 +2,7 @@
 
 #PBS -V
 #PBS -q batch
-#PBS -N test_sec
+#PBS -N tiburon_martillo
 #PBS -l walltime=00:10:00
 #PBS -l nodes=saturno:ppn=24
 

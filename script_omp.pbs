@@ -1,0 +1,15 @@
+#PBS -S /bin/bash
+
+#PBS -V
+#PBS -q batch
+#PBS -N tiburon_bengala
+#PBS -l walltime=00:10:00
+#PBS -l nodes=saturno:ppn=24
+
+source /etc/profile.d/modules.sh
+
+cd $PBS_O_WORKDIR
+
+make omp
+module load openmpi
+make test_omp
