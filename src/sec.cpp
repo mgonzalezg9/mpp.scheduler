@@ -250,16 +250,13 @@ void get_solution(Task *tasks, int n_tasks, Platform *platform, Task *sorted_tas
         // s[nivel].printInfo();
         // cout << "--------------------------------" << endl;
 
-        if (solucion(tareasPendientes))
+        if (solucion(tareasPendientes) && tact <= toa && eact <= eoa)
         {
-            if (tact <= toa && eact <= eoa)
-            {
-                toa = tact;
-                eoa = eact;
-                soa = s;
-            }
+            toa = tact;
+            eoa = eact;
+            soa = s;
 
-            cout << "----------SOL (t = " << tact << ", e = " << eact << ")----------------------" << endl;
+            // cout << "----------SOL (t = " << tact << ", e = " << eact << ")----------------------" << endl;
         }
 
         if (criterio(tareasPendientes))
